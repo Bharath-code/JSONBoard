@@ -1,0 +1,421 @@
+
+<h2 class="sr-only">JSONBoard GTM Blitz — interactive go-to-market campaign map covering B2B, B2C, viral loops, and free-to-paid conversion</h2>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+#app{padding:1rem 0;display:flex;flex-direction:column;gap:1.5rem}
+.tabs{display:flex;gap:6px;border-bottom:0.5px solid var(--color-border-tertiary);padding-bottom:0}
+.tab{font-size:13px;padding:7px 14px;border-radius:6px 6px 0 0;border:0.5px solid transparent;cursor:pointer;color:var(--color-text-secondary);background:transparent;transition:all .15s;position:relative;bottom:-0.5px}
+.tab.active{color:var(--color-text-primary);background:var(--color-background-primary);border-color:var(--color-border-tertiary);border-bottom-color:var(--color-background-primary)}
+.tab:hover:not(.active){color:var(--color-text-primary);background:var(--color-background-secondary)}
+.panel{display:none;flex-direction:column;gap:1.25rem}
+.panel.active{display:flex}
+.section-label{font-size:11px;font-weight:500;color:var(--color-text-secondary);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px}
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.metric-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.metric-label{font-size:11px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.metric-val{font-size:22px;font-weight:500;color:var(--color-text-primary)}
+.metric-sub{font-size:11px;color:var(--color-text-secondary);margin-top:3px}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500}
+.badge-blue{background:var(--color-background-info);color:var(--color-text-info)}
+.badge-green{background:#EAF3DE;color:#3B6D11}
+.badge-amber{background:#FAEEDA;color:#854F0B}
+.badge-red{background:#FCEBEB;color:#A32D2D}
+.badge-purple{background:#EEEDFE;color:#534AB7}
+.badge-teal{background:#E1F5EE;color:#0F6E56}
+.week-row{display:flex;gap:0;border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid var(--color-border-tertiary)}
+.week-cell{flex:1;padding:10px 12px;border-right:0.5px solid var(--color-border-tertiary);font-size:12px}
+.week-cell:last-child{border-right:none}
+.week-header{font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px;text-transform:uppercase}
+.week-item{color:var(--color-text-primary);margin-bottom:3px;font-size:12px}
+.week-cell.highlight{background:var(--color-background-info)}
+.channel-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.channel-row:last-child{border-bottom:none}
+.channel-name{font-size:13px;font-weight:500;color:var(--color-text-primary);width:130px;flex-shrink:0}
+.channel-bar-track{flex:1;height:6px;background:var(--color-background-tertiary);border-radius:3px;overflow:hidden}
+.channel-bar{height:6px;border-radius:3px;transition:width 1s ease}
+.channel-meta{font-size:12px;color:var(--color-text-secondary);width:80px;text-align:right;flex-shrink:0}
+.trigger-card{padding:12px 14px;border-radius:var(--border-radius-md);border-left:3px solid;margin-bottom:8px}
+.trigger-card:last-child{margin-bottom:0}
+.trigger-title{font-size:13px;font-weight:500;margin-bottom:4px}
+.trigger-body{font-size:12px;color:var(--color-text-secondary);line-height:1.5}
+.trigger-rate{font-size:11px;font-weight:500;margin-top:6px}
+h3{font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:10px}
+p.body{font-size:13px;color:var(--color-text-secondary);line-height:1.6}
+.funnel-step{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--border-radius-md);margin-bottom:6px;position:relative}
+.funnel-num{font-size:20px;font-weight:500;color:var(--color-text-primary);width:72px;flex-shrink:0}
+.funnel-label{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.funnel-sub{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.funnel-tag{margin-left:auto;flex-shrink:0}
+.arrow-down{text-align:center;font-size:16px;color:var(--color-text-secondary);margin:1px 0}
+.icp-card{padding:12px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary)}
+.icp-title{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
+.icp-body{font-size:12px;color:var(--color-text-secondary);line-height:1.5}
+.icp-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.msg-bubble{padding:10px 14px;border-radius:10px;font-size:12px;line-height:1.5;max-width:90%;margin-bottom:8px}
+.msg-out{background:var(--color-background-info);color:var(--color-text-info);margin-left:auto;border-bottom-right-radius:3px}
+.msg-in{background:var(--color-background-secondary);color:var(--color-text-primary);margin-right:auto;border-bottom-left-radius:3px}
+.msg-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:3px}
+</style>
+
+<div id="app">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('blitz')">⚡ Blitz timeline</button>
+    <button class="tab" onclick="showTab('b2b')">🏢 B2B playbook</button>
+    <button class="tab" onclick="showTab('b2c')">👤 B2C playbook</button>
+    <button class="tab" onclick="showTab('viral')">🔁 Viral engine</button>
+    <button class="tab" onclick="showTab('convert')">💳 Conversion</button>
+  </div>
+
+  <!-- BLITZ TIMELINE -->
+  <div id="panel-blitz" class="panel active">
+    <div class="card-grid-3">
+      <div class="metric-card"><div class="metric-label">Launch window</div><div class="metric-val">30 days</div><div class="metric-sub">blitz period</div></div>
+      <div class="metric-card"><div class="metric-label">Channels hit</div><div class="metric-val">12+</div><div class="metric-sub">simultaneous</div></div>
+      <div class="metric-card"><div class="metric-label">Target week 4</div><div class="metric-val">500</div><div class="metric-sub">dashboards created</div></div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Week-by-week attack plan</div>
+      <div class="week-row">
+        <div class="week-cell highlight">
+          <div class="week-header">Week 1 — Ignite</div>
+          <div class="week-item">🟠 Ship v1 live</div>
+          <div class="week-item">🟠 Hacker News Show HN</div>
+          <div class="week-item">🟠 Twitter/X demo GIF</div>
+          <div class="week-item">🟠 Dev.to post</div>
+          <div class="week-item">🟠 DM 20 devs with JSON pain</div>
+        </div>
+        <div class="week-cell">
+          <div class="week-header">Week 2 — Amplify</div>
+          <div class="week-item">🔵 r/webdev + r/SideProject</div>
+          <div class="week-item">🔵 LinkedIn B2B post</div>
+          <div class="week-item">🔵 IndieHackers journey post</div>
+          <div class="week-item">🔵 Embed in 3 OSS projects</div>
+          <div class="week-item">🔵 Cold email 50 API-first cos</div>
+        </div>
+        <div class="week-cell">
+          <div class="week-header">Week 3 — Scale</div>
+          <div class="week-item">🟢 Product Hunt prep</div>
+          <div class="week-item">🟢 YouTube 60s demo</div>
+          <div class="week-item">🟢 Raycast extension</div>
+          <div class="week-item">🟢 Discord dev servers</div>
+          <div class="week-item">🟢 Stripe launch — Pro goes live</div>
+        </div>
+        <div class="week-cell">
+          <div class="week-header">Week 4 — Convert</div>
+          <div class="week-item">⚪ Product Hunt launch day</div>
+          <div class="week-item">⚪ First paying user push</div>
+          <div class="week-item">⚪ Expiry emails start firing</div>
+          <div class="week-item">⚪ B2B outreach follow-up</div>
+          <div class="week-item">⚪ Retarget week-1 signups</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Channel priority matrix</div>
+      <div class="channel-row">
+        <span class="channel-name">Hacker News</span>
+        <div class="channel-bar-track"><div class="channel-bar" style="width:95%;background:#185FA5"></div></div>
+        <span class="badge badge-blue">B2C + B2B</span>
+        <span class="channel-meta">Day 1</span>
+      </div>
+      <div class="channel-row">
+        <span class="channel-name">Twitter / X</span>
+        <div class="channel-bar-track"><div class="channel-bar" style="width:90%;background:#1D9E75"></div></div>
+        <span class="badge badge-teal">B2C</span>
+        <span class="channel-meta">Day 1</span>
+      </div>
+      <div class="channel-row">
+        <span class="channel-name">Product Hunt</span>
+        <div class="channel-bar-track"><div class="channel-bar" style="width:85%;background:#D85A30"></div></div>
+        <span class="badge badge-amber">B2C</span>
+        <span class="channel-meta">Week 4</span>
+      </div>
+      <div class="channel-row">
+        <span class="channel-name">LinkedIn</span>
+        <div class="channel-bar-track"><div class="channel-bar" style="width:75%;background:#534AB7"></div></div>
+        <span class="badge badge-purple">B2B</span>
+        <span class="channel-meta">Week 2</span>
+      </div>
+      <div class="channel-row">
+        <span class="channel-name">Reddit (r/webdev)</span>
+        <div class="channel-bar-track"><div class="channel-bar" style="width:70%;background:#185FA5"></div></div>
+        <span class="badge badge-blue">B2C</span>
+        <span class="channel-meta">Week 2</span>
+      </div>
+      <div class="channel-row">
+        <span class="channel-name">Dev Discord servers</span>
+        <div class="channel-bar-track"><div class="channel-bar" style="width:65%;background:#534AB7"></div></div>
+        <span class="badge badge-purple">B2C</span>
+        <span class="channel-meta">Week 3</span>
+      </div>
+      <div class="channel-row">
+        <span class="channel-name">Cold email (B2B)</span>
+        <div class="channel-bar-track"><div class="channel-bar" style="width:60%;background:#D85A30"></div></div>
+        <span class="badge badge-amber">B2B</span>
+        <span class="channel-meta">Week 2</span>
+      </div>
+      <div class="channel-row">
+        <span class="channel-name">IndieHackers</span>
+        <div class="channel-bar-track"><div class="channel-bar" style="width:55%;background:#1D9E75"></div></div>
+        <span class="badge badge-teal">B2C</span>
+        <span class="channel-meta">Week 2</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- B2B PLAYBOOK -->
+  <div id="panel-b2b" class="panel">
+    <div class="card">
+      <div class="section-label">B2B ICP — who buys Team at $29/mo</div>
+      <div class="card-grid">
+        <div class="icp-card">
+          <div class="icp-title">API-first startups</div>
+          <div class="icp-body">5–20 person team. Backend produces JSON payloads daily. PM or non-technical founder needs to see the data. No data team.</div>
+          <div class="icp-tags"><span class="badge badge-blue">High intent</span><span class="badge badge-green">Team plan</span></div>
+        </div>
+        <div class="icp-card">
+          <div class="icp-title">Dev tool companies</div>
+          <div class="icp-body">Build APIs. Have developer customers. Want to embed live dashboards in their docs or status pages. Embed iframe = core need.</div>
+          <div class="icp-tags"><span class="badge badge-purple">Embed use case</span><span class="badge badge-green">Team plan</span></div>
+        </div>
+        <div class="icp-card">
+          <div class="icp-title">Freelance agencies</div>
+          <div class="icp-body">Build backends for clients. Client wants to see their data as a dashboard. JSONBoard = instant client deliverable, zero setup.</div>
+          <div class="icp-tags"><span class="badge badge-amber">Pro plan</span><span class="badge badge-teal">High volume</span></div>
+        </div>
+        <div class="icp-card">
+          <div class="icp-title">Data / analytics SaaS</div>
+          <div class="icp-body">Export feature sends JSON. Users complain "I can't read this." JSONBoard = white-label dashboard layer for their export files.</div>
+          <div class="icp-tags"><span class="badge badge-purple">API ingest</span><span class="badge badge-green">Team plan</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">B2B outreach — cold email sequence</div>
+      <div style="max-width:540px">
+        <div class="msg-label">Email 1 — Day 1 (pain-first, no pitch)</div>
+        <div class="msg-bubble msg-out">Subject: quick q about your API docs<br><br>Hey [name] — noticed [Company] ships a REST API. Quick question: when your team shares API response data internally, what do you use to visualise it?<br><br>I'm building something that turns JSON payloads into shareable dashboards in ~3 seconds — no setup. Thought it might save your team time.<br><br>Happy to send a demo link if useful.</div>
+        <div class="msg-label" style="margin-top:12px">Email 2 — Day 4 (attach a demo they didn't ask for)</div>
+        <div class="msg-bubble msg-out">Hey [name] — made a dashboard from your public API endpoint as a demo:<br>👉 jsonboard.dev/d/[slug]<br><br>Took 8 seconds. No login needed to view. If your team produces JSON payloads regularly, this could save hours of copy-paste into sheets.</div>
+        <div class="msg-label" style="margin-top:12px">Email 3 — Day 10 (soft close)</div>
+        <div class="msg-bubble msg-out">Last one from me — if it's not relevant, totally fine. Just wanted to leave the link in case a use case comes up: jsonboard.dev<br><br>We have a Team plan ($29/mo) with an API ingestion endpoint — you can POST JSON programmatically and always have a live dashboard URL. Happy to set it up together if useful.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">B2B value props (what to say vs what not to say)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div class="section-label" style="color:var(--color-text-success)">✓ say this</div>
+          <div class="trigger-card" style="border-left-color:#3B6D11;background:#EAF3DE">
+            <div class="trigger-body" style="color:#3B6D11">"Your PM can see the API data without pinging an engineer."</div></div>
+          <div class="trigger-card" style="border-left-color:#3B6D11;background:#EAF3DE">
+            <div class="trigger-body" style="color:#3B6D11">"Share a live dashboard in your client report — no screenshots."</div></div>
+          <div class="trigger-card" style="border-left-color:#3B6D11;background:#EAF3DE">
+            <div class="trigger-body" style="color:#3B6D11">"POST to our API endpoint — your dashboard auto-updates."</div></div>
+          <div class="trigger-card" style="border-left-color:#3B6D11;background:#EAF3DE">
+            <div class="trigger-body" style="color:#3B6D11">"Zero setup — no Docker, no database, no Grafana."</div></div>
+        </div>
+        <div>
+          <div class="section-label" style="color:var(--color-text-danger)">✗ don't say this</div>
+          <div class="trigger-card" style="border-left-color:#A32D2D;background:#FCEBEB">
+            <div class="trigger-body" style="color:#A32D2D">"We're like Metabase but simpler." (sounds inferior)</div></div>
+          <div class="trigger-card" style="border-left-color:#A32D2D;background:#FCEBEB">
+            <div class="trigger-body" style="color:#A32D2D">"A JSON visualisation tool." (vague, no emotion)</div></div>
+          <div class="trigger-card" style="border-left-color:#A32D2D;background:#FCEBEB">
+            <div class="trigger-body" style="color:#A32D2D">"Enterprise-ready BI platform." (not what this is)</div></div>
+          <div class="trigger-card" style="border-left-color:#A32D2D;background:#FCEBEB">
+            <div class="trigger-body" style="color:#A32D2D">"Free to try." (undersells; make them feel the value first)</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B2C PLAYBOOK -->
+  <div id="panel-b2c" class="panel">
+    <div class="card">
+      <div class="section-label">B2C ICP — who uses free + upgrades to Pro $9/mo</div>
+      <div class="card-grid">
+        <div class="icp-card">
+          <div class="icp-title">Solo dev / indie hacker</div>
+          <div class="icp-body">Builds in public. Has JSON everywhere — API responses, analytics, CI outputs. Shares findings on Twitter. The primary viral vector.</div>
+          <div class="icp-tags"><span class="badge badge-blue">Viral sharer</span><span class="badge badge-amber">Pro $9</span></div>
+        </div>
+        <div class="icp-card">
+          <div class="icp-title">Backend engineer</div>
+          <div class="icp-body">Debugs JSON payloads daily. Pastes to Slack for teammates. Wants a better way. Low friction = instant adoption. Shares with team.</div>
+          <div class="icp-tags"><span class="badge badge-green">High freq user</span><span class="badge badge-amber">Pro $9</span></div>
+        </div>
+        <div class="icp-card">
+          <div class="icp-title">Technical PM / founder</div>
+          <div class="icp-body">Needs quick data views, no engineer time. Exports JSON from tools. Wants a dashboard link to share with investors or team.</div>
+          <div class="icp-tags"><span class="badge badge-purple">Upgrade intent</span><span class="badge badge-green">Team plan</span></div>
+        </div>
+        <div class="icp-card">
+          <div class="icp-title">Dev advocate / tech writer</div>
+          <div class="icp-body">Shows API responses in tutorials and docs. JSONBoard link = live, interactive example. Perfect for "here's what the API returns" sections.</div>
+          <div class="icp-tags"><span class="badge badge-teal">Embed use case</span><span class="badge badge-amber">Pro $9</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">B2C content playbook — what to post, where, when</div>
+      <div class="trigger-card" style="border-left-color:#185FA5;background:var(--color-background-secondary)">
+        <div class="trigger-title" style="color:var(--color-text-primary)">Twitter / X — the demo GIF (Day 1)</div>
+        <div class="trigger-body">"spent 3 seconds to turn this JSON into a dashboard instead of squinting at it in the terminal.<br>made this → jsonboard.dev<br>[GIF: paste → dashboard → share URL generated]"<br><br>Hook: show the pain first (terminal full of JSON). Resolve with the product. No feature list.</div>
+      </div>
+      <div class="trigger-card" style="border-left-color:#3B6D11;background:var(--color-background-secondary)">
+        <div class="trigger-title" style="color:var(--color-text-primary)">Hacker News Show HN (Day 1)</div>
+        <div class="trigger-body">Title: "Show HN: JSONBoard – paste any JSON array, get a shareable dashboard in 3 seconds"<br><br>Top comment to pre-write: explain the auto-chart selection logic (HN loves technical depth). Mention it's Cloudflare Workers + KV. Include the GitHub link even if it's not OSS yet.</div>
+      </div>
+      <div class="trigger-card" style="border-left-color:#534AB7;background:var(--color-background-secondary)">
+        <div class="trigger-title" style="color:var(--color-text-primary)">Reddit r/webdev (Week 2)</div>
+        <div class="trigger-body">Title: "I built a tool that turns JSON into a dashboard instantly — no signup, no setup, just paste"<br><br>DO NOT use "I made a thing". Lead with the pain they feel. Share 3 real use cases: debugging API responses, sharing analytics with non-devs, quick data exploration.</div>
+      </div>
+      <div class="trigger-card" style="border-left-color:#D85A30;background:var(--color-background-secondary)">
+        <div class="trigger-title" style="color:var(--color-text-primary)">IndieHackers (Week 2)</div>
+        <div class="trigger-body">"I built JSONBoard in 2 weeks while working solo. Here's the architecture, the GTM plan, and what I learned."<br><br>IH audience loves transparency. Share the revenue target (₹1 crore), the Cloudflare KV architecture, the viral loop design. This drives follows AND backlinks.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIRAL ENGINE -->
+  <div id="panel-viral" class="panel">
+    <div class="card">
+      <div class="section-label">The viral loop — how each share creates new creators</div>
+      <div>
+        <div class="funnel-step" style="background:var(--color-background-info)">
+          <div class="funnel-num">1</div>
+          <div><div class="funnel-label">Developer pastes JSON</div><div class="funnel-sub">Lands on jsonboard.dev — zero friction, no signup</div></div>
+          <div class="funnel-tag"><span class="badge badge-blue">Entry</span></div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="funnel-step" style="background:var(--color-background-secondary)">
+          <div class="funnel-num">2</div>
+          <div><div class="funnel-label">Gets a shareable link</div><div class="funnel-sub">jsonboard.dev/d/abc123 — clicks Share in &lt;30 seconds</div></div>
+          <div class="funnel-tag"><span class="badge badge-teal">Action</span></div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="funnel-step" style="background:var(--color-background-secondary)">
+          <div class="funnel-num">3</div>
+          <div><div class="funnel-label">Posts link in Slack / Twitter / email</div><div class="funnel-sub">Team, followers, or client receives the link</div></div>
+          <div class="funnel-tag"><span class="badge badge-amber">Distribution</span></div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="funnel-step" style="background:var(--color-background-secondary)">
+          <div class="funnel-num">4</div>
+          <div><div class="funnel-label">Viewer sees dashboard + "Made with JSONBoard" footer</div><div class="funnel-sub">15–40% curiosity click rate on branded footer</div></div>
+          <div class="funnel-tag"><span class="badge badge-purple">Impression</span></div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="funnel-step" style="background:#EAF3DE">
+          <div class="funnel-num">5</div>
+          <div><div class="funnel-label">Viewer becomes creator — pastes their own JSON</div><div class="funnel-sub">12–20% of footer clicks start a new dashboard</div></div>
+          <div class="funnel-tag"><span class="badge badge-green">New creator ↩</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="section-label">Viral amplifiers to build in</div>
+        <div class="trigger-card" style="border-left-color:#185FA5;background:var(--color-background-secondary)">
+          <div class="trigger-title" style="color:var(--color-text-primary)">Live counter on homepage</div>
+          <div class="trigger-body">"4,231 dashboards created today" — social proof that the loop is running. Update from KV meta counter.</div>
+        </div>
+        <div class="trigger-card" style="border-left-color:#1D9E75;background:var(--color-background-secondary)">
+          <div class="trigger-title" style="color:var(--color-text-primary)">Share copy defaults to tweet</div>
+          <div class="trigger-body">Pre-fill share copy: "Just made a dashboard from my API response in 3 seconds → jsonboard.dev/d/... via @jsonboard" — one click to post.</div>
+        </div>
+        <div class="trigger-card" style="border-left-color:#534AB7;background:var(--color-background-secondary)">
+          <div class="trigger-title" style="color:var(--color-text-primary)">Embed widget for OSS READMEs</div>
+          <div class="trigger-body">Markdown badge: [![View dashboard](jsonboard.dev/badge.svg)](jsonboard.dev/d/...) — devs embed in their own README, each repo visitor sees it.</div>
+        </div>
+        <div class="trigger-card" style="border-left-color:#D85A30;background:var(--color-background-secondary)">
+          <div class="trigger-title" style="color:var(--color-text-primary)">"Built with JSONBoard" wall</div>
+          <div class="trigger-body">Public gallery of cool dashboards shared with permission. Drives discovery and aspiration. SEO benefit from unique content.</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-label">K-factor targets</div>
+        <div class="metric-card" style="margin-bottom:8px"><div class="metric-label">Target k-factor (Month 1)</div><div class="metric-val">0.3</div><div class="metric-sub">each 100 creators → 30 more creators via shares</div></div>
+        <div class="metric-card" style="margin-bottom:8px"><div class="metric-label">Target k-factor (Month 6)</div><div class="metric-val">0.6</div><div class="metric-sub">growing loop — compounding growth kicks in</div></div>
+        <div class="metric-card"><div class="metric-label">Break-even k (self-sustaining)</div><div class="metric-val">1.0</div><div class="metric-sub">reached via footer + tweet default + README badge</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONVERSION -->
+  <div id="panel-convert" class="panel">
+    <div class="card">
+      <div class="section-label">The 5 conversion moments — ranked by conversion rate</div>
+      <div class="trigger-card" style="border-left-color:#A32D2D;background:#FCEBEB">
+        <div class="trigger-title">🔴 1. Link expiry email (highest converter)</div>
+        <div class="trigger-body">Sent 48h before free link expires. Subject: "Your JSONBoard dashboard expires in 2 days".<br>Body: "Dashboard '[name]' shared [date] expires on [date+7]. Pro keeps it for 90 days — $9/month. One click to upgrade and keep your link alive."<br><br>Why it works: the user already has the dashboard. Losing it is loss aversion. Loss aversion converts ~3x better than feature desire.</div>
+        <div class="trigger-rate" style="color:#A32D2D">Est. conversion: 8–15% of active users who get this email</div>
+      </div>
+      <div class="trigger-card" style="border-left-color:#854F0B;background:#FAEEDA">
+        <div class="trigger-title">🟠 2. File size rejection (mid-funnel)</div>
+        <div class="trigger-body">User pastes JSON > 1 MB. Instead of a generic error: "This file is 2.3 MB. Free tier supports up to 1 MB. Pro supports 10 MB — upgrade for $9/month." with inline Stripe checkout.</div>
+        <div class="trigger-rate" style="color:#854F0B">Est. conversion: 6–10% of users who hit the limit</div>
+      </div>
+      <div class="trigger-card" style="border-left-color:#534AB7;background:#EEEDFE">
+        <div class="trigger-title">🟣 3. Password protection request</div>
+        <div class="trigger-body">Free user clicks "Protect with password" in share modal. A modal appears: "Password protection is a Pro feature. Upgrade for $9/month to keep your data private." The intent here is HIGH — they care enough to want privacy.</div>
+        <div class="trigger-rate" style="color:#534AB7">Est. conversion: 5–8% of users who try to set a password</div>
+      </div>
+      <div class="trigger-card" style="border-left-color:#185FA5;background:var(--color-background-info)">
+        <div class="trigger-title">🔵 4. Branded footer click (viral + convert)</div>
+        <div class="trigger-body">Viewer clicks "Made with JSONBoard" on a shared dashboard. They land on homepage with a banner: "You're seeing this because someone shared a dashboard with you. Create yours free — or upgrade to remove the branding."</div>
+        <div class="trigger-rate" style="color:#185FA5">Est. conversion: 2–4% of footer clicks (but high volume)</div>
+      </div>
+      <div class="trigger-card" style="border-left-color:#3B6D11;background:#EAF3DE">
+        <div class="trigger-title">🟢 5. 7th-day in-product nudge</div>
+        <div class="trigger-body">On the 7th day after a free user's first dashboard, show an in-product banner: "You've created [N] dashboards. Your earliest one expires in [X] hours. Pro gives you 90-day links, password protection, and 10× larger files — $9/month."</div>
+        <div class="trigger-rate" style="color:#3B6D11">Est. conversion: 3–6% of weekly active users</div>
+      </div>
+    </div>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="section-label">Free-to-Pro email nurture sequence</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.6">
+          <div style="padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-weight:500;color:var(--color-text-primary)">Day 0</span> — Welcome. "Your dashboard is live at [url]. Share it anywhere — no signup needed to view."</div>
+          <div style="padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-weight:500;color:var(--color-text-primary)">Day 2</span> — Use case tips. "3 ways developers use JSONBoard: debug API responses, share data with PMs, document endpoints."</div>
+          <div style="padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-weight:500;color:var(--color-text-primary)">Day 5</span> — Social proof. "150 dashboards created yesterday. Here's the most-shared one this week." (link to gallery)</div>
+          <div style="padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-weight:500;color:var(--color-text-primary)">Day 7</span> — Expiry warning. "Your dashboard expires in 2 days. Upgrade to Pro ($9/mo) to extend to 90 days."</div>
+          <div style="padding:8px 0"><span style="font-weight:500;color:var(--color-text-primary)">Day 9</span> — Final. "Your first dashboard has expired. Here's everything Pro unlocks. Come back and make it permanent."</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-label">Friction removal checklist</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.6">
+          <div style="padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)">✓ No signup to create a dashboard</div>
+          <div style="padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)">✓ No signup to view a shared link</div>
+          <div style="padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary)">✓ Stripe Checkout — no custom payment form</div>
+          <div style="padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary)">✓ Upgrade from expiry email in 1 click</div>
+          <div style="padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary)">✓ UPI support via Stripe (India)</div>
+          <div style="padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary)">✓ Annual plan shown at checkout (2 months free)</div>
+          <div style="padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary)">✓ Dashboard history auto-migrates on upgrade</div>
+          <div style="padding:7px 0">✓ Cancel anytime — no retention flow dark patterns</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-' + id).classList.add('active');
+}
+</script>

@@ -128,18 +128,19 @@ JSONBoard is built on three principles: (1) zero cold starts — every request i
 
 | Layer | Technology & rationale |
 | :---- | :---- |
-| Frontend app | Next.js 14 (App Router) — SSR for fast initial load, React for interactive paste/dashboard UI |
+| Frontend app | SvelteKit — SSR for fast initial load, smaller bundles (~30 KB vs ~120 KB for Next.js), no virtual DOM overhead for chart rendering, simpler state management via stores. Deployed to Vercel. |
 | Styling | Tailwind CSS — utility classes, no runtime CSS-in-JS overhead |
-| Charts (app) | Chart.js 4 — lightweight, canvas-based, no D3 complexity |
+| Charts (app) | Chart.js 4 — lightweight, canvas-based, no D3 complexity. Animations use Chart.js native + CSS transitions only. No animation library. |
 | Worker runtime | Cloudflare Workers \+ Hono — sub-1ms cold start, TypeScript-native, free tier generous |
-| Persistence | Cloudflare KV — key-value store, global replication, 25 MB value limit, TTL built-in |
+| Persistence | Cloudflare KV — key-value store, global replication, 25 MB value limit, TTL built-in. No database at MVP. |
 | Large payloads | Cloudflare R2 — S3-compatible object store, $0.015/GB/month, replaces KV for \>1 MB blobs |
 | Slug generation | nanoid — 8-char URL-safe IDs, \~1 billion possible slugs before collision risk |
-| Auth (Pro/Team) | Clerk or custom JWT — lightweight, no database required |
+| Auth (Pro/Team) | Stripe Checkout + signed JWT cookie — no login system, no password, no OAuth at MVP. Cookie contains {plan, exp} signed with shared secret, verified by SvelteKit server and Worker. Recovery via Stripe Customer Portal. |
+| Password hashing | PBKDF2 via Web Crypto API (crypto.subtle.deriveBits) — \~10ms verification in Workers. bcrypt is too slow (\~500ms). |
 | Payments | Stripe — subscriptions, webhook for tier upgrade/downgrade |
-| Deployment | Vercel (Next.js) \+ Wrangler (Workers) — independent deploy pipelines |
+| Deployment | Vercel (SvelteKit) \+ Wrangler (Workers) — independent deploy pipelines |
 | Package manager | Bun — 10x faster installs, native TypeScript runner for scripts |
-| Type safety | TypeScript end-to-end — shared types between Worker and Next.js app |
+| Type safety | TypeScript end-to-end — shared types between Worker and SvelteKit app |
 
 ## **4.3  Cloudflare Worker routes**
 
@@ -180,22 +181,23 @@ JSONBoard is built on three principles: (1) zero cold starts — every request i
 | :---- |
 | jsonboard/ |
 | ├── apps/ |
-| │   ├── web/                    ← Next.js frontend (paste UI, Pro dashboard, auth) |
-| │   │   ├── app/ |
-| │   │   │   ├── page.tsx         ← paste \+ dashboard renderer |
-| │   │   │   ├── d/\[slug\]/        ← redirect to Worker viewer |
-| │   │   │   ├── dashboard/       ← Pro: history, settings |
-| │   │   │   └── api/             ← Next.js API routes (auth, Stripe webhooks) |
-| │   │   ├── components/ |
-| │   │   │   ├── JsonInput.tsx |
-| │   │   │   ├── Dashboard.tsx |
-| │   │   │   ├── ChartEngine.tsx  ← auto-chart selection logic |
-| │   │   │   ├── StatCards.tsx |
-| │   │   │   ├── DataTable.tsx |
-| │   │   │   └── ShareButton.tsx |
-| │   │   └── lib/ |
-| │   │       ├── chartSelector.ts ← field-type detection \+ chart ranking |
-| │   │       └── types.ts |
+| │   ├── web/                    ← SvelteKit frontend (paste UI, Pro dashboard, auth) |
+| │   │   ├── src/ |
+| │   │   │   ├── routes/ |
+| │   │   │   │   ├── +page.svelte  ← paste + dashboard renderer |
+| │   │   │   │   ├── d/[slug]/     ← redirect to Worker viewer |
+| │   │   │   │   ├── dashboard/    ← Pro: history, settings |
+| │   │   │   │   └── api/          ← SvelteKit API routes (auth, Stripe webhooks) |
+| │   │   │   └── lib/ |
+| │   │   │       ├── components/ |
+| │   │   │       │   ├── JsonInput.svelte |
+| │   │   │       │   ├── Dashboard.svelte |
+| │   │   │       │   ├── ChartEngine.svelte  ← auto-chart selection logic |
+| │   │   │       │   ├── StatCards.svelte |
+| │   │   │       │   ├── DataTable.svelte |
+| │   │   │       │   └── ShareButton.svelte |
+| │   │   │       └── chartSelector.ts ← field-type detection + chart ranking |
+| │   │   └── app.html |
 | │   └── worker/                 ← Cloudflare Worker (Hono app) |
 | │       ├── src/ |
 | │       │   ├── index.ts         ← Hono app, all routes |

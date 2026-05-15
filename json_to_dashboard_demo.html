@@ -1,0 +1,308 @@
+
+<h2 class="sr-only">JSON to Dashboard — paste any JSON and get instant charts and tables</h2>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+#app{padding:1rem 0;display:flex;flex-direction:column;gap:1.5rem}
+#header{display:flex;align-items:center;gap:10px}
+#logo{width:28px;height:28px;background:#1a1a1a;border-radius:6px;display:flex;align-items:center;justify-content:center}
+#title-text{font-size:17px;font-weight:500;color:var(--color-text-primary)}
+#subtitle{font-size:13px;color:var(--color-text-secondary)}
+#input-zone{border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);overflow:hidden;background:var(--color-background-primary)}
+#input-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:0.5px solid var(--color-border-tertiary)}
+#input-label{font-size:12px;font-weight:500;color:var(--color-text-secondary);letter-spacing:0.04em;text-transform:uppercase}
+#example-btns{display:flex;gap:6px}
+.ex-btn{font-size:11px;padding:3px 8px;border-radius:4px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);color:var(--color-text-secondary);cursor:pointer;transition:background 0.15s}
+.ex-btn:hover{background:var(--color-background-tertiary)}
+#json-input{width:100%;min-height:130px;padding:12px 14px;font-family:var(--font-mono);font-size:12.5px;border:none;outline:none;resize:vertical;background:transparent;color:var(--color-text-primary);line-height:1.6}
+#input-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:0.5px solid var(--color-border-tertiary)}
+#error-msg{font-size:12px;color:var(--color-text-danger);display:none}
+#parse-btn{padding:6px 16px;background:var(--color-text-primary);color:var(--color-background-primary);border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;transition:opacity 0.15s}
+#parse-btn:hover{opacity:0.85}
+#dashboard{display:none;flex-direction:column;gap:1.25rem}
+#stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.stat-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.stat-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em}
+.stat-val{font-size:22px;font-weight:500;color:var(--color-text-primary)}
+#charts-area{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chart-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px}
+.chart-title{font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.04em}
+canvas{width:100%!important}
+#table-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+#table-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid var(--color-border-tertiary)}
+#table-header-left{font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em}
+#search-input{font-size:12px;padding:4px 10px;border-radius:4px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);outline:none;width:160px}
+#data-table{width:100%;border-collapse:collapse;font-size:12.5px}
+#data-table th{padding:8px 14px;text-align:left;font-weight:500;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;cursor:pointer;user-select:none}
+#data-table th:hover{color:var(--color-text-primary)}
+#data-table td{padding:8px 14px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
+#data-table tr:last-child td{border-bottom:none}
+#data-table tr:hover td{background:var(--color-background-secondary)}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500}
+.badge-green{background:#EAF3DE;color:#3B6D11}
+.badge-amber{background:#FAEEDA;color:#854F0B}
+.badge-red{background:#FCEBEB;color:#A32D2D}
+.badge-blue{background:#E6F1FB;color:#185FA5}
+#reset-btn{font-size:12px;color:var(--color-text-secondary);cursor:pointer;border:none;background:none;text-decoration:underline}
+#reset-btn:hover{color:var(--color-text-primary)}
+</style>
+
+<div id="app">
+  <div id="header">
+    <div id="logo">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="9" width="3" height="6" rx="1" fill="#4ade80"/><rect x="5" y="6" width="3" height="9" rx="1" fill="#60a5fa"/><rect x="9" y="3" width="3" height="12" rx="1" fill="#f472b6"/><rect x="13" y="1" width="3" height="14" rx="1" fill="#fb923c"/></svg>
+    </div>
+    <div>
+      <div id="title-text">JSON → Dashboard</div>
+      <div id="subtitle">Paste any JSON array — get instant charts, tables, and stats</div>
+    </div>
+  </div>
+
+  <div id="input-zone">
+    <div id="input-header">
+      <span id="input-label">JSON Input</span>
+      <div id="example-btns">
+        <button class="ex-btn" onclick="loadExample('sales')">Sales</button>
+        <button class="ex-btn" onclick="loadExample('api')">API logs</button>
+        <button class="ex-btn" onclick="loadExample('users')">Users</button>
+      </div>
+    </div>
+    <textarea id="json-input" placeholder='Paste a JSON array here, e.g. [{"name":"Alice","revenue":1200,"status":"active"}, ...]'></textarea>
+    <div id="input-footer">
+      <span id="error-msg">Invalid JSON — check your brackets and quotes</span>
+      <button id="parse-btn" onclick="parseDashboard()">Generate dashboard ↗</button>
+    </div>
+  </div>
+
+  <div id="dashboard">
+    <div id="stats-row"></div>
+    <div id="charts-area"></div>
+    <div id="table-card">
+      <div id="table-header">
+        <span id="table-header-left">All records</span>
+        <input id="search-input" placeholder="Filter rows…" oninput="filterTable(this.value)"/>
+      </div>
+      <div style="overflow-x:auto"><table id="data-table"><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div>
+    </div>
+    <div style="text-align:right"><button id="reset-btn" onclick="resetView()">← paste different JSON</button></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const EXAMPLES = {
+  sales: [
+    {month:"Jan",revenue:12400,orders:89,region:"North",rep:"Alice",status:"active"},
+    {month:"Feb",revenue:15200,orders:112,region:"South",rep:"Bob",status:"active"},
+    {month:"Mar",revenue:9800,orders:74,region:"East",rep:"Alice",status:"paused"},
+    {month:"Apr",revenue:18600,orders:145,region:"West",rep:"Carol",status:"active"},
+    {month:"May",revenue:22100,orders:178,region:"North",rep:"Bob",status:"active"},
+    {month:"Jun",revenue:16900,orders:131,region:"South",rep:"Carol",status:"active"},
+    {month:"Jul",revenue:13200,orders:99,region:"East",rep:"Alice",status:"paused"},
+    {month:"Aug",revenue:25400,orders:201,region:"West",rep:"Bob",status:"active"}
+  ],
+  api: [
+    {endpoint:"/api/users",method:"GET",latency_ms:45,status_code:200,calls:2341},
+    {endpoint:"/api/orders",method:"POST",latency_ms:120,status_code:201,calls:891},
+    {endpoint:"/api/products",method:"GET",latency_ms:38,status_code:200,calls:5621},
+    {endpoint:"/api/auth",method:"POST",latency_ms:89,status_code:200,calls:1234},
+    {endpoint:"/api/webhooks",method:"POST",latency_ms:203,status_code:500,calls:44},
+    {endpoint:"/api/reports",method:"GET",latency_ms:672,status_code:200,calls:312},
+    {endpoint:"/api/search",method:"GET",latency_ms:156,status_code:200,calls:789}
+  ],
+  users: [
+    {name:"Aisha K.",plan:"Pro",mrr:49,country:"India",signups:3,status:"active"},
+    {name:"Marco B.",plan:"Free",mrr:0,country:"Italy",signups:0,status:"trial"},
+    {name:"Jin P.",plan:"Team",mrr:149,country:"Korea",signups:12,status:"active"},
+    {name:"Sara W.",plan:"Pro",mrr:49,country:"USA",signups:5,status:"active"},
+    {name:"Omar H.",plan:"Free",mrr:0,country:"UAE",signups:1,status:"trial"},
+    {name:"Priya R.",plan:"Team",mrr:149,country:"India",signups:8,status:"active"},
+    {name:"Leo M.",plan:"Pro",mrr:49,country:"Brazil",signups:2,status:"churned"},
+    {name:"Emma T.",plan:"Free",mrr:0,country:"UK",signups:0,status:"trial"}
+  ]
+};
+
+let rawData = [];
+let sortCol = null;
+let sortAsc = true;
+const chartInstances = [];
+
+function loadExample(key) {
+  document.getElementById('json-input').value = JSON.stringify(EXAMPLES[key], null, 2);
+  document.getElementById('error-msg').style.display = 'none';
+}
+
+function parseDashboard() {
+  const raw = document.getElementById('json-input').value.trim();
+  let data;
+  try {
+    data = JSON.parse(raw);
+    if (!Array.isArray(data)) data = [data];
+    if (data.length === 0) throw new Error('empty');
+  } catch(e) {
+    document.getElementById('error-msg').style.display = 'block';
+    return;
+  }
+  document.getElementById('error-msg').style.display = 'none';
+  rawData = data;
+  buildDashboard(data);
+}
+
+function getType(val) {
+  if (val === null || val === undefined) return 'null';
+  if (typeof val === 'number') return 'number';
+  if (typeof val === 'boolean') return 'bool';
+  return 'string';
+}
+
+function buildDashboard(data) {
+  const keys = Object.keys(data[0] || {});
+  const numKeys = keys.filter(k => data.some(r => typeof r[k] === 'number'));
+  const strKeys = keys.filter(k => data.some(r => typeof r[k] === 'string' && typeof r[k] !== 'number'));
+
+  // Stats
+  const statsRow = document.getElementById('stats-row');
+  statsRow.innerHTML = '';
+  statsRow.appendChild(makeStatCard('Records', data.length, ''));
+  statsRow.appendChild(makeStatCard('Fields', keys.length, ''));
+  numKeys.slice(0,3).forEach(k => {
+    const vals = data.map(r => r[k]).filter(v => typeof v === 'number');
+    const sum = vals.reduce((a,b) => a+b, 0);
+    statsRow.appendChild(makeStatCard('Total ' + k, sum >= 10000 ? (sum/1000).toFixed(1)+'k' : Math.round(sum), ''));
+  });
+
+  // Charts
+  chartInstances.forEach(c => c.destroy());
+  chartInstances.length = 0;
+  const chartsArea = document.getElementById('charts-area');
+  chartsArea.innerHTML = '';
+
+  const CHART_PALETTE = ['#378ADD','#1D9E75','#D85A30','#D4537E','#BA7517','#7F77DD'];
+
+  if (numKeys.length > 0 && strKeys.length > 0) {
+    const labelKey = strKeys[0];
+    const valKey = numKeys[0];
+    const labels = data.map(r => String(r[labelKey]).substring(0,12));
+    const vals = data.map(r => r[valKey]);
+    const card1 = makeChartCard(labelKey + ' by ' + valKey);
+    chartsArea.appendChild(card1);
+    const ctx1 = card1.querySelector('canvas').getContext('2d');
+    chartInstances.push(new Chart(ctx1, {
+      type:'bar',
+      data:{labels,datasets:[{data:vals,backgroundColor:CHART_PALETTE[1]+'bb',borderRadius:4,borderSkipped:false}]},
+      options:{plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'#888'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#888'},grid:{color:'#88888820'}}},responsive:true,maintainAspectRatio:true,aspectRatio:1.8}
+    }));
+  }
+
+  if (numKeys.length > 1 && strKeys.length > 0) {
+    const labelKey = strKeys[0];
+    const valKey = numKeys[1] || numKeys[0];
+    const labels = data.map(r => String(r[labelKey]).substring(0,12));
+    const vals = data.map(r => r[valKey]);
+    const card2 = makeChartCard(labelKey + ' / ' + valKey + ' trend');
+    chartsArea.appendChild(card2);
+    const ctx2 = card2.querySelector('canvas').getContext('2d');
+    chartInstances.push(new Chart(ctx2, {
+      type:'line',
+      data:{labels,datasets:[{data:vals,borderColor:CHART_PALETTE[0],backgroundColor:CHART_PALETTE[0]+'22',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:CHART_PALETTE[0]}]},
+      options:{plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'#888'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#888'},grid:{color:'#88888820'}}},responsive:true,maintainAspectRatio:true,aspectRatio:1.8}
+    }));
+  }
+
+  if (strKeys.length > 1) {
+    const catKey = strKeys.find(k => {
+      const uniq = [...new Set(data.map(r => r[k]))];
+      return uniq.length > 1 && uniq.length <= 8;
+    }) || strKeys[1];
+    if (catKey) {
+      const counts = {};
+      data.forEach(r => { const v = String(r[catKey]); counts[v] = (counts[v]||0)+1; });
+      const labels = Object.keys(counts);
+      const vals = Object.values(counts);
+      const card3 = makeChartCard(catKey + ' breakdown');
+      chartsArea.appendChild(card3);
+      const ctx3 = card3.querySelector('canvas').getContext('2d');
+      chartInstances.push(new Chart(ctx3, {
+        type:'doughnut',
+        data:{labels,datasets:[{data:vals,backgroundColor:CHART_PALETTE.slice(0,labels.length),borderWidth:0}]},
+        options:{plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:10}}},responsive:true,maintainAspectRatio:true,aspectRatio:1.6}
+      }));
+    }
+  }
+
+  if (numKeys.length >= 2) {
+    const card4 = makeChartCard(numKeys[0] + ' vs ' + numKeys[1]);
+    chartsArea.appendChild(card4);
+    const ctx4 = card4.querySelector('canvas').getContext('2d');
+    chartInstances.push(new Chart(ctx4, {
+      type:'scatter',
+      data:{datasets:[{data:data.map(r => ({x:r[numKeys[0]],y:r[numKeys[1]]})),backgroundColor:CHART_PALETTE[3]+'99',pointRadius:5}]},
+      options:{plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:numKeys[0],font:{size:10}},ticks:{font:{size:10},color:'#888'},grid:{color:'#88888820'}},y:{title:{display:true,text:numKeys[1],font:{size:10}},ticks:{font:{size:10},color:'#888'},grid:{color:'#88888820'}}},responsive:true,maintainAspectRatio:true,aspectRatio:1.8}
+    }));
+  }
+
+  // Table
+  const thead = document.getElementById('table-head');
+  const tbody = document.getElementById('table-body');
+  thead.innerHTML = `<tr>${keys.map(k => `<th onclick="sortBy('${k}')">${k} <i class="ti ti-arrows-sort" style="font-size:10px;opacity:0.4" aria-hidden="true"></i></th>`).join('')}</tr>`;
+  renderRows(data, keys);
+
+  document.getElementById('input-zone').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'flex';
+}
+
+function makeStatCard(label, val, suffix) {
+  const d = document.createElement('div');
+  d.className = 'stat-card';
+  d.innerHTML = `<div class="stat-label">${label}</div><div class="stat-val">${val}${suffix}</div>`;
+  return d;
+}
+
+function makeChartCard(title) {
+  const d = document.createElement('div');
+  d.className = 'chart-card';
+  d.innerHTML = `<div class="chart-title">${title}</div><canvas></canvas>`;
+  return d;
+}
+
+const STATUS_COLORS = {active:'badge-green',success:'badge-green',paused:'badge-amber',warning:'badge-amber',trial:'badge-blue',error:'badge-red',churned:'badge-red',500:'badge-red',200:'badge-green',201:'badge-green'};
+
+function renderRows(data, keys) {
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = data.map(row => `<tr>${keys.map(k => {
+    let v = row[k] === null || row[k] === undefined ? '—' : row[k];
+    const low = String(v).toLowerCase();
+    const cls = STATUS_COLORS[low] || STATUS_COLORS[v];
+    if (cls) return `<td><span class="badge ${cls}">${v}</span></td>`;
+    if (typeof v === 'number') return `<td style="font-variant-numeric:tabular-nums">${v.toLocaleString()}</td>`;
+    return `<td>${v}</td>`;
+  }).join('')}</tr>`).join('');
+}
+
+function filterTable(q) {
+  const keys = Object.keys(rawData[0]||{});
+  const filtered = rawData.filter(r => keys.some(k => String(r[k]).toLowerCase().includes(q.toLowerCase())));
+  renderRows(filtered, keys);
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = true; }
+  const sorted = [...rawData].sort((a,b) => {
+    const av = a[col], bv = b[col];
+    if (typeof av === 'number' && typeof bv === 'number') return sortAsc ? av-bv : bv-av;
+    return sortAsc ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+  });
+  renderRows(sorted, Object.keys(rawData[0]||{}));
+}
+
+function resetView() {
+  chartInstances.forEach(c => c.destroy());
+  chartInstances.length = 0;
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('input-zone').style.display = 'block';
+  document.getElementById('json-input').value = '';
+  rawData = [];
+}
+
+loadExample('sales');
+</script>
