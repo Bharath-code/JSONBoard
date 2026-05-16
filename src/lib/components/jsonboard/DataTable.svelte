@@ -1,34 +1,36 @@
-<script lang="ts">
+<script lang="ts" generics="TData, TValue">
+  import {
+    type ColumnDef,
+    type PaginationState,
+    type SortingState,
+    type ColumnFiltersState,
+    getCoreRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    getFilteredRowModel,
+  } from '@tanstack/table-core';
+  import { createRawSnippet } from 'svelte';
+  import { createSvelteTable, FlexRender, renderSnippet } from '$lib/components/ui/data-table/index.js';
+  import * as Table from '$lib/components/ui/table/index.js';
+  import { Button } from '$lib/components/ui/button/index.js';
+  import { Input } from '$lib/components/ui/input/index.js';
+  import { Badge } from '$lib/components/ui/badge/index.js';
   import ArrowUpDown from 'lucide-svelte/icons/arrow-up-down';
   import Search from 'lucide-svelte/icons/search';
-  import { Button } from '$lib/components/ui/button';
-  import { Input } from '$lib/components/ui/input';
-  import { Badge } from '$lib/components/ui/badge';
+  import type { FlatRow, InferredField } from '$lib/jsonboard/types';
   import { formatNumber } from '$lib/utils';
-  import type { FlatRow, InferredField, SortState } from '$lib/jsonboard/types';
+  import { parseNumberish } from '$lib/jsonboard/inference';
 
   let {
     rows,
     fields,
-    query = $bindable(''),
-    sort = $bindable(null)
   }: {
     rows: FlatRow[];
     fields: InferredField[];
-    query: string;
-    sort: SortState;
   } = $props();
 
-  const visibleFields = $derived(fields.slice(0, 32));
-  const filteredRows = $derived(filterRows(rows, visibleFields.map((field) => field.name), query));
-  const sortedRows = $derived(sortRows(filteredRows, sort, fields));
-  const capRows = $derived(rows.length > 500 ? 500 : sortedRows.length);
-  const visibleRows = $derived(sortedRows.slice(0, capRows));
-
-  function toggleSort(key: string) {
-    if (!sort || sort.key !== key) sort = { key, direction: 'asc' };
-    else if (sort.direction === 'asc') sort = { key, direction: 'desc' };
-    else sort = null;
+  function isStatus(value: unknown) {
+    return typeof value === 'string' && /^(active|inactive|success|failed|error|pending|paid|free|pro|team|true|false)$/i.test(value);
   }
 
   function formatCell(value: unknown, field: InferredField) {
@@ -37,99 +39,185 @@
     return String(value);
   }
 
-  function isStatus(value: unknown) {
-    return typeof value === 'string' && /^(active|inactive|success|failed|error|pending|paid|free|pro|team|true|false)$/i.test(value);
-  }
+  const columns = $derived(
+    fields.slice(0, 32).map((field) => {
+      return {
+        accessorKey: field.name,
+        header: ({ column }: { column: any }) => {
+          const sortSnippet = createRawSnippet(() => ({
+            render: () => `<div class="flex items-center gap-2 cursor-pointer select-none hover:text-foreground">
+              <span class="max-w-40 truncate">${field.name}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-3 text-muted-foreground/60"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>
+            </div>`,
+            setup: (element: HTMLElement) => {
+              const handler = column.getToggleSortingHandler();
+              if (handler) element.addEventListener('click', handler);
+              return () => {
+                if (handler) element.removeEventListener('click', handler);
+              };
+            }
+          }));
+          return renderSnippet(sortSnippet);
+        },
+        cell: ({ row }: { row: any }) => {
+          const value = row.original[field.name];
+          const formatted = formatCell(value, field);
+          const isNum = field.kind === 'number';
+          const isStat = isStatus(value);
+          
+          if (isStat) {
+            const badgeSnippet = createRawSnippet(() => ({
+              render: () => `<div class="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 text-[10px]">${formatted}</div>`
+            }));
+            return renderSnippet(badgeSnippet);
+          }
+          
+          if (value === null || value === undefined || value === '') {
+            const emptySnippet = createRawSnippet(() => ({
+              render: () => `<span class="text-muted-foreground/50">—</span>`
+            }));
+            return renderSnippet(emptySnippet);
+          }
 
-  function sortIcon(key: string) {
-    if (!sort || sort.key !== key) return '';
-    return sort.direction === 'asc' ? '↑' : '↓';
-  }
+          const cellSnippet = createRawSnippet(() => ({
+            render: () => `<div class="max-w-64 truncate ${isNum ? 'text-right tabular-nums' : ''}" title="${formatted}">${formatted}</div>`
+          }));
+          return renderSnippet(cellSnippet);
+        },
+        sortingFn: (rowA: any, rowB: any, columnId: string) => {
+          const left = rowA.original[columnId];
+          const right = rowB.original[columnId];
+          if (field.kind === 'number') {
+            return (parseNumberish(left) ?? 0) - (parseNumberish(right) ?? 0);
+          }
+          return String(left ?? '').localeCompare(String(right ?? ''));
+        }
+      } as ColumnDef<FlatRow, unknown>;
+    })
+  );
+
+  let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  let sorting = $state<SortingState>([]);
+  let globalFilter = $state('');
+
+  const table = createSvelteTable({
+    get data() { return rows; },
+    get columns() { return columns; },
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    globalFilterFn: 'includesString',
+    onPaginationChange: (updater) => {
+      if (typeof updater === 'function') {
+        pagination = updater(pagination);
+      } else {
+        pagination = updater;
+      }
+    },
+    onSortingChange: (updater) => {
+      if (typeof updater === 'function') {
+        sorting = updater(sorting);
+      } else {
+        sorting = updater;
+      }
+    },
+    onGlobalFilterChange: (updater) => {
+      if (typeof updater === 'function') {
+        globalFilter = updater(globalFilter);
+      } else {
+        globalFilter = updater;
+      }
+    },
+    state: {
+      get pagination() { return pagination; },
+      get sorting() { return sorting; },
+      get globalFilter() { return globalFilter; },
+    },
+  });
 </script>
 
 <section class="rounded-xl border border-border bg-card shadow-sm">
-  <!-- Table header -->
   <div class="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
       <h2 class="font-semibold">Data table</h2>
       <p class="text-sm text-muted-foreground">
-        {formatNumber(filteredRows.length, 0)} matching rows · {formatNumber(fields.length, 0)} fields
+        {formatNumber(table.getFilteredRowModel().rows.length, 0)} matching rows · {formatNumber(fields.length, 0)} fields
       </p>
     </div>
     <label class="relative w-full sm:max-w-xs">
       <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-      <Input bind:value={query} class="pl-9" placeholder="Search visible columns" />
+      <Input 
+        value={globalFilter} 
+        oninput={(e) => table.setGlobalFilter(e.currentTarget.value)}
+        class="pl-9" 
+        placeholder="Search all columns" 
+      />
     </label>
   </div>
 
-  <!-- Scrollable table -->
   <div class="max-h-[600px] overflow-auto">
-    <table class="w-full min-w-[800px] border-collapse text-sm">
-      <thead class="sticky top-0 z-10 bg-muted/50 backdrop-blur-sm">
-        <tr>
-          {#each visibleFields as field, index}
-            <th class="border-b border-border px-3 py-2.5 text-left font-medium text-muted-foreground {index === 0 ? 'sticky left-0 z-20 bg-muted/50 backdrop-blur-sm' : ''}">
-              <Button variant="ghost" size="sm" class="h-7 px-1.5 font-medium" onclick={() => toggleSort(field.name)}>
-                <span class="max-w-40 truncate">{field.name}</span>
-                <span class="text-xs text-muted-foreground">{sortIcon(field.name)}</span>
-                <ArrowUpDown class="size-3 text-muted-foreground/60" />
-              </Button>
-            </th>
-          {/each}
-        </tr>
-      </thead>
-      <tbody>
-        {#each visibleRows as row}
-          <tr class="border-b border-border/50 transition-colors hover:bg-muted/30">
-            {#each visibleFields as field, index}
-              <td
-                class="max-w-64 truncate px-3 py-2.5 {field.kind === 'number' ? 'text-right tabular-nums' : ''} {index === 0 ? 'sticky left-0 bg-card font-medium' : ''}"
-                title={formatCell(row[field.name], field)}
-              >
-                {#if isStatus(row[field.name])}
-                  <Badge variant="secondary" class="text-[10px]">{formatCell(row[field.name], field)}</Badge>
-                {:else if row[field.name] === null || row[field.name] === undefined || row[field.name] === ''}
-                  <span class="text-muted-foreground/50">—</span>
-                {:else}
-                  {formatCell(row[field.name], field)}
+    <Table.Root>
+      <Table.Header class="sticky top-0 z-10 bg-muted/50 backdrop-blur-sm">
+        {#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
+          <Table.Row>
+            {#each headerGroup.headers as header, index (header.id)}
+              <Table.Head class="{index === 0 ? 'sticky left-0 z-20 bg-muted/50 backdrop-blur-sm' : ''}">
+                {#if !header.isPlaceholder}
+                  <FlexRender
+                    content={header.column.columnDef.header}
+                    context={header.getContext()}
+                  />
                 {/if}
-              </td>
+              </Table.Head>
             {/each}
-          </tr>
+          </Table.Row>
         {/each}
-      </tbody>
-    </table>
+      </Table.Header>
+      <Table.Body>
+        {#each table.getRowModel().rows as row (row.id)}
+          <Table.Row>
+            {#each row.getVisibleCells() as cell, index (cell.id)}
+              <Table.Cell class="{index === 0 ? 'sticky left-0 bg-card font-medium' : ''}">
+                <FlexRender
+                  content={cell.column.columnDef.cell}
+                  context={cell.getContext()}
+                />
+              </Table.Cell>
+            {/each}
+          </Table.Row>
+        {:else}
+          <Table.Row>
+            <Table.Cell colspan={columns.length} class="h-24 text-center">
+              No results.
+            </Table.Cell>
+          </Table.Row>
+        {/each}
+      </Table.Body>
+    </Table.Root>
   </div>
 
-  {#if sortedRows.length > visibleRows.length}
-    <p class="border-t border-border px-4 py-3 text-sm text-muted-foreground">
-      Showing first {visibleRows.length} rows. Search or sort to narrow the dataset.
+  <div class="flex items-center justify-between border-t border-border px-4 py-3">
+    <p class="text-sm text-muted-foreground">
+      Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
     </p>
-  {/if}
+    <div class="flex items-center space-x-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onclick={() => table.previousPage()}
+        disabled={!table.getCanPreviousPage()}
+      >
+        Previous
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onclick={() => table.nextPage()}
+        disabled={!table.getCanNextPage()}
+      >
+        Next
+      </Button>
+    </div>
+  </div>
 </section>
-
-<script lang="ts" module>
-  import { parseNumberish } from '$lib/jsonboard/inference';
-
-  function filterRows(rows: FlatRow[], fieldNames: string[], query: string) {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized) return rows;
-    return rows.filter((row) =>
-      fieldNames.some((field) => String(row[field] ?? '').toLowerCase().includes(normalized))
-    );
-  }
-
-  function sortRows(rows: FlatRow[], sort: SortState, fields: InferredField[]) {
-    if (!sort) return rows;
-    const field = fields.find((item) => item.name === sort.key);
-    const direction = sort.direction === 'asc' ? 1 : -1;
-    return [...rows].sort((a, b) => {
-      const left = a[sort.key];
-      const right = b[sort.key];
-      if (field?.kind === 'number') {
-        return ((parseNumberish(left) ?? 0) - (parseNumberish(right) ?? 0)) * direction;
-      }
-      return String(left ?? '').localeCompare(String(right ?? '')) * direction;
-    });
-  }
-</script>

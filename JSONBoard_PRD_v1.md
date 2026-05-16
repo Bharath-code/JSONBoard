@@ -118,6 +118,159 @@ This is the core intellectual property of JSONBoard. The chart selection engine 
 
 The engine scores every pair of fields and picks the top 4 combinations. Charts are ranked by information density — a scatter plot of two numerics beats a bar chart of the same two if the relationship is non-linear.
 
+## **3.4 Workflow Integration: From Utility to Daily Driver**
+
+The core challenge with JSON visualization tools is that they're often utilities — used once and forgotten. To transform JSONBoard into a daily driver, we must integrate it into existing developer workflows and create recurring value triggers.
+
+### **The Daily Driver Strategy**
+
+JSONBoard must become the answer to these daily questions:
+- "How's the API performing?" → Check JSONBoard dashboard
+- "What broke last night?" → JSONBoard alert email
+- "Can you show me that data?" → Send JSONBoard link
+- "What do our logs say?" → Pipe to JSONBoard CLI
+
+### **Workflow Integration Points**
+
+#### **Browser Extension (Highest Priority)**
+- **Network tab integration**: One-click from Chrome DevTools to visualize any API response
+- **Context menu**: "Send to JSONBoard" on any JSON in the browser
+- **Impact**: Creates daily habit during debugging/API development
+- **Tier**: Pro feature ($9/mo)
+
+#### **CLI Tool**
+```bash
+# Pipe any command output to JSONBoard
+curl api.example.com/users | jsonboard
+kubectl logs -f pod | jsonboard
+jq '.' data.json | jsonboard
+```
+- **Impact**: Becomes part of daily CLI workflows for backend devs
+- **Tier**: Pro feature ($9/mo)
+
+#### **IDE Extensions**
+- VS Code: Highlight JSON → right-click "Visualize in JSONBoard"
+- JetBrains: Same for IntelliJ/WebStorm
+- **Impact**: Sticky during development, not just debugging
+- **Tier**: Pro feature ($9/mo)
+
+### **Recurring Value Features**
+
+#### **Scheduled Dashboards (The Game-Changer)**
+- Users set up "refresh this JSON every hour/day from [URL]"
+- JSONBoard pings the endpoint and updates the dashboard automatically
+- **Use cases**: 
+  - Monitor API health/latency
+  - Track daily signup counts
+  - Watch error rates from logs
+- **Impact**: Creates daily check-in habit
+- **Tier**: Team feature ($29/mo)
+
+#### **Alert Conditions**
+- "Alert me when [metric] crosses threshold"
+- "Email me when error_rate > 5%"
+- **Impact**: Push-based daily usage, not pull-based
+- **Tier**: Team feature ($29/mo)
+
+#### **Historical Comparison**
+- Store past versions of dashboards
+- "Show me this week vs last week"
+- **Impact**: Users return to see trends
+- **Tier**: Team feature ($29/mo)
+
+### **Team Collaboration Features**
+
+#### **Team Workspaces**
+- Shared dashboard library for teams
+- Comment threads on dashboards (like Figma comments)
+- @mentions for collaboration
+- **Impact**: Social gravity - developers check because teammates are there
+- **Tier**: Team feature ($29/mo)
+
+#### **Template Library**
+- "API response template" - reusable chart configurations
+- Teams save their common visualizations
+- **Impact**: Institutional knowledge, harder to leave
+- **Tier**: Team feature ($29/mo)
+
+#### **Embed in Documentation**
+- One-line embed code for API docs
+- "Live example" in README.md
+- **Impact**: Traffic from external docs, not just direct visits
+- **Tier**: Team feature ($29/mo)
+
+### **Data Pipeline Integration**
+
+#### **Webhook Receiver**
+- Give users a permanent webhook URL
+- Services POST JSON to it automatically
+- JSONBoard visualizes each webhook payload
+- **Use cases**: Stripe events, GitHub webhooks, custom analytics
+- **Impact**: Passive, ongoing data flow
+- **Tier**: Team feature ($29/mo)
+
+#### **Database Query Export**
+- Connect to PostgreSQL/MySQL (simple read-only)
+- "Run query every hour, visualize results"
+- **Impact**: Replacement for lightweight BI tools
+- **Tier**: Team feature ($29/mo)
+
+#### **Log Aggregation**
+- Input: JSONL logs from any source
+- Output: Live dashboard of log metrics
+- **Impact**: Daily monitoring workflow
+- **Tier**: Team feature ($29/mo)
+
+### **Developer Habit Triggers**
+
+#### **Morning Standup Dashboards**
+- Pre-built templates for common dev metrics:
+  - "Yesterday's API errors"
+  - "New user signups"
+  - "Deployment success rate"
+- **Impact**: Daily ritual
+- **Tier**: Free with Team upgrade
+
+#### **PR/Commit Integration**
+- GitHub App: Auto-generate dashboard from JSON in PRs
+- Comment with dashboard link
+- **Impact**: Part of code review workflow
+- **Tier**: Team feature ($29/mo)
+
+#### **Slack/Discord Bot**
+- `/jsonboard [paste JSON]` → returns dashboard link
+- `/jsonboard monitor [url]` → sets up scheduled dashboard
+- **Impact**: Usage where developers already hang out
+- **Tier**: Team feature ($29/mo)
+
+### **Feature Prioritization Roadmap**
+
+#### **Phase 1 (MVP + Sticky Features)**
+- Browser extension (Chrome first)
+- CLI tool
+- Scheduled dashboards (simple URL polling)
+- Team workspaces (basic)
+
+#### **Phase 2 (Workflow Integration)**
+- VS Code extension
+- Webhook receiver
+- Alert conditions
+- Historical comparison
+
+#### **Phase 3 (Platform Expansion)**
+- Database connectors
+- Log aggregation
+- GitHub/GitLab integrations
+- Slack/Discord bot
+
+### **Positioning Shift**
+
+**Current positioning**: "Paste JSON. Get a dashboard. Share in one click."
+
+**Future positioning**: "Monitor your APIs and data pipelines without infrastructure."
+
+This transforms JSONBoard from a utility tool into a monitoring/observability platform — a much larger, stickier market with stronger monetization potential.
+
 # **4\. Technical Architecture**
 
 ## **4.1  Architecture philosophy**

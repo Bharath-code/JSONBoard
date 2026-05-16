@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@source "../node_modules/layerchart";
 
 /* ─── shadcn-svelte Neutral theme ─── */
 
@@ -27,6 +28,13 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  
+  /* Layerchart expected color mappings */
+  --color-surface-content: var(--foreground);
+  --color-surface-100: var(--card);
+  --color-surface-200: var(--muted);
+  --color-surface-300: var(--border);
+
   --radius: 0.625rem;
 }
 

@@ -2,9 +2,11 @@
 
 ## Product
 
-**JSONBoard** is a zero-setup, browser-based JSON visualization tool. Users paste a JSON array and receive an interactive dashboard with auto-generated charts, a filterable data table, and a shareable URL — no signup required.
+**JSONBoard** is a zero-setup, browser-based JSON visualization tool that evolves into a daily driver workflow platform. Users paste a JSON array and receive an interactive dashboard with auto-generated charts, a filterable data table, and a shareable URL — no signup required.
 
 **One-line pitch:** Metabase for people who just have JSON and 30 seconds.
+
+**Strategic evolution:** From occasional utility to daily monitoring platform through workflow integration (browser extension, CLI, IDE), recurring value features (scheduled dashboards, alerts, historical comparison), and team collaboration (workspaces, templates, embeds).
 
 ## Glossary
 
@@ -17,7 +19,12 @@
 | **Viewer** | The self-contained HTML page served by the Cloudflare Worker for shared dashboards. Depends on Chart.js from cdnjs. |
 | **Free user** | An anonymous user who pastes JSON and creates a dashboard. No account, no login. |
 | **Pro user** | A paying user ($9/mo) identified by a signed JWT cookie. Gets extended TTL, password protection, custom slug, CSV export. |
-| **Team** | A paying workspace ($29/mo) with API ingestion, embed iframe, and 5 seats. Not in MVP. |
+| **Team** | A paying workspace ($29/mo) with API ingestion, embed iframe, scheduled dashboards, alerts, and 5 seats. Not in MVP. |
+| **Scheduled Dashboard** | A dashboard that automatically refreshes from a URL on a schedule (hourly/daily/weekly). Team tier feature for recurring monitoring. |
+| **Webhook Receiver** | A permanent URL that accepts JSON POST requests and auto-generates dashboards from incoming data. Team tier feature. |
+| **Browser Extension** | Chrome extension that integrates with DevTools for one-click JSON visualization from network tab. Pro tier feature. |
+| **CLI Tool** | Command-line interface for piping JSON directly to JSONBoard from terminal commands. Pro tier feature. |
+| **Alert Condition** | Threshold-based notification rule on dashboard metrics (e.g., "alert when error_rate > 5%"). Team tier feature. |
 
 ## Architecture Decisions
 
@@ -82,6 +89,10 @@
 - **Embed iframe** (F-09) — Team feature, deferred.
 - **Live counter** ("X dashboards created today") — social proof added when there's actual traction.
 - **hCaptcha** — rate limiting is sufficient abuse guardrail at launch. Add reactively if abuse patterns appear.
+- **Workflow Integrations** (Phase 2) — Browser extension, CLI tool, IDE extensions deferred until post-MVP user traction.
+- **Scheduled Dashboards** (Phase 2) — Requires queue system (Cloudflare Queues) and additional scheduling infrastructure. Build when Team tier launches.
+- **Alert System** (Phase 2) — Requires notification infrastructure (email/webhook). Build when Team tier launches.
+- **Webhook Receiver** (Phase 2) — Requires additional worker endpoints and rate limiting. Build when Team tier launches.
 
 ## Technical Specifications
 
