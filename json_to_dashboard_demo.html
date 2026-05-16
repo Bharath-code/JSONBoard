@@ -1,308 +1,758 @@
-
-<h2 class="sr-only">JSON to Dashboard — paste any JSON and get instant charts and tables</h2>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font-sans)}
-#app{padding:1rem 0;display:flex;flex-direction:column;gap:1.5rem}
-#header{display:flex;align-items:center;gap:10px}
-#logo{width:28px;height:28px;background:#1a1a1a;border-radius:6px;display:flex;align-items:center;justify-content:center}
-#title-text{font-size:17px;font-weight:500;color:var(--color-text-primary)}
-#subtitle{font-size:13px;color:var(--color-text-secondary)}
-#input-zone{border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);overflow:hidden;background:var(--color-background-primary)}
-#input-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:0.5px solid var(--color-border-tertiary)}
-#input-label{font-size:12px;font-weight:500;color:var(--color-text-secondary);letter-spacing:0.04em;text-transform:uppercase}
-#example-btns{display:flex;gap:6px}
-.ex-btn{font-size:11px;padding:3px 8px;border-radius:4px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);color:var(--color-text-secondary);cursor:pointer;transition:background 0.15s}
-.ex-btn:hover{background:var(--color-background-tertiary)}
-#json-input{width:100%;min-height:130px;padding:12px 14px;font-family:var(--font-mono);font-size:12.5px;border:none;outline:none;resize:vertical;background:transparent;color:var(--color-text-primary);line-height:1.6}
-#input-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:0.5px solid var(--color-border-tertiary)}
-#error-msg{font-size:12px;color:var(--color-text-danger);display:none}
-#parse-btn{padding:6px 16px;background:var(--color-text-primary);color:var(--color-background-primary);border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;transition:opacity 0.15s}
-#parse-btn:hover{opacity:0.85}
-#dashboard{display:none;flex-direction:column;gap:1.25rem}
-#stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
-.stat-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
-.stat-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em}
-.stat-val{font-size:22px;font-weight:500;color:var(--color-text-primary)}
-#charts-area{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.chart-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px}
-.chart-title{font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.04em}
-canvas{width:100%!important}
-#table-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
-#table-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid var(--color-border-tertiary)}
-#table-header-left{font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em}
-#search-input{font-size:12px;padding:4px 10px;border-radius:4px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);outline:none;width:160px}
-#data-table{width:100%;border-collapse:collapse;font-size:12.5px}
-#data-table th{padding:8px 14px;text-align:left;font-weight:500;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;cursor:pointer;user-select:none}
-#data-table th:hover{color:var(--color-text-primary)}
-#data-table td{padding:8px 14px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
-#data-table tr:last-child td{border-bottom:none}
-#data-table tr:hover td{background:var(--color-background-secondary)}
-.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500}
-.badge-green{background:#EAF3DE;color:#3B6D11}
-.badge-amber{background:#FAEEDA;color:#854F0B}
-.badge-red{background:#FCEBEB;color:#A32D2D}
-.badge-blue{background:#E6F1FB;color:#185FA5}
-#reset-btn{font-size:12px;color:var(--color-text-secondary);cursor:pointer;border:none;background:none;text-decoration:underline}
-#reset-btn:hover{color:var(--color-text-primary)}
-</style>
-
-<div id="app">
-  <div id="header">
-    <div id="logo">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="9" width="3" height="6" rx="1" fill="#4ade80"/><rect x="5" y="6" width="3" height="9" rx="1" fill="#60a5fa"/><rect x="9" y="3" width="3" height="12" rx="1" fill="#f472b6"/><rect x="13" y="1" width="3" height="14" rx="1" fill="#fb923c"/></svg>
-    </div>
-    <div>
-      <div id="title-text">JSON → Dashboard</div>
-      <div id="subtitle">Paste any JSON array — get instant charts, tables, and stats</div>
-    </div>
-  </div>
-
-  <div id="input-zone">
-    <div id="input-header">
-      <span id="input-label">JSON Input</span>
-      <div id="example-btns">
-        <button class="ex-btn" onclick="loadExample('sales')">Sales</button>
-        <button class="ex-btn" onclick="loadExample('api')">API logs</button>
-        <button class="ex-btn" onclick="loadExample('users')">Users</button>
-      </div>
-    </div>
-    <textarea id="json-input" placeholder='Paste a JSON array here, e.g. [{"name":"Alice","revenue":1200,"status":"active"}, ...]'></textarea>
-    <div id="input-footer">
-      <span id="error-msg">Invalid JSON — check your brackets and quotes</span>
-      <button id="parse-btn" onclick="parseDashboard()">Generate dashboard ↗</button>
-    </div>
-  </div>
-
-  <div id="dashboard">
-    <div id="stats-row"></div>
-    <div id="charts-area"></div>
-    <div id="table-card">
-      <div id="table-header">
-        <span id="table-header-left">All records</span>
-        <input id="search-input" placeholder="Filter rows…" oninput="filterTable(this.value)"/>
-      </div>
-      <div style="overflow-x:auto"><table id="data-table"><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div>
-    </div>
-    <div style="text-align:right"><button id="reset-btn" onclick="resetView()">← paste different JSON</button></div>
-  </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script>
-const EXAMPLES = {
-  sales: [
-    {month:"Jan",revenue:12400,orders:89,region:"North",rep:"Alice",status:"active"},
-    {month:"Feb",revenue:15200,orders:112,region:"South",rep:"Bob",status:"active"},
-    {month:"Mar",revenue:9800,orders:74,region:"East",rep:"Alice",status:"paused"},
-    {month:"Apr",revenue:18600,orders:145,region:"West",rep:"Carol",status:"active"},
-    {month:"May",revenue:22100,orders:178,region:"North",rep:"Bob",status:"active"},
-    {month:"Jun",revenue:16900,orders:131,region:"South",rep:"Carol",status:"active"},
-    {month:"Jul",revenue:13200,orders:99,region:"East",rep:"Alice",status:"paused"},
-    {month:"Aug",revenue:25400,orders:201,region:"West",rep:"Bob",status:"active"}
-  ],
-  api: [
-    {endpoint:"/api/users",method:"GET",latency_ms:45,status_code:200,calls:2341},
-    {endpoint:"/api/orders",method:"POST",latency_ms:120,status_code:201,calls:891},
-    {endpoint:"/api/products",method:"GET",latency_ms:38,status_code:200,calls:5621},
-    {endpoint:"/api/auth",method:"POST",latency_ms:89,status_code:200,calls:1234},
-    {endpoint:"/api/webhooks",method:"POST",latency_ms:203,status_code:500,calls:44},
-    {endpoint:"/api/reports",method:"GET",latency_ms:672,status_code:200,calls:312},
-    {endpoint:"/api/search",method:"GET",latency_ms:156,status_code:200,calls:789}
-  ],
-  users: [
-    {name:"Aisha K.",plan:"Pro",mrr:49,country:"India",signups:3,status:"active"},
-    {name:"Marco B.",plan:"Free",mrr:0,country:"Italy",signups:0,status:"trial"},
-    {name:"Jin P.",plan:"Team",mrr:149,country:"Korea",signups:12,status:"active"},
-    {name:"Sara W.",plan:"Pro",mrr:49,country:"USA",signups:5,status:"active"},
-    {name:"Omar H.",plan:"Free",mrr:0,country:"UAE",signups:1,status:"trial"},
-    {name:"Priya R.",plan:"Team",mrr:149,country:"India",signups:8,status:"active"},
-    {name:"Leo M.",plan:"Pro",mrr:49,country:"Brazil",signups:2,status:"churned"},
-    {name:"Emma T.",plan:"Free",mrr:0,country:"UK",signups:0,status:"trial"}
-  ]
-};
-
-let rawData = [];
-let sortCol = null;
-let sortAsc = true;
-const chartInstances = [];
-
-function loadExample(key) {
-  document.getElementById('json-input').value = JSON.stringify(EXAMPLES[key], null, 2);
-  document.getElementById('error-msg').style.display = 'none';
-}
-
-function parseDashboard() {
-  const raw = document.getElementById('json-input').value.trim();
-  let data;
-  try {
-    data = JSON.parse(raw);
-    if (!Array.isArray(data)) data = [data];
-    if (data.length === 0) throw new Error('empty');
-  } catch(e) {
-    document.getElementById('error-msg').style.display = 'block';
-    return;
-  }
-  document.getElementById('error-msg').style.display = 'none';
-  rawData = data;
-  buildDashboard(data);
-}
-
-function getType(val) {
-  if (val === null || val === undefined) return 'null';
-  if (typeof val === 'number') return 'number';
-  if (typeof val === 'boolean') return 'bool';
-  return 'string';
-}
-
-function buildDashboard(data) {
-  const keys = Object.keys(data[0] || {});
-  const numKeys = keys.filter(k => data.some(r => typeof r[k] === 'number'));
-  const strKeys = keys.filter(k => data.some(r => typeof r[k] === 'string' && typeof r[k] !== 'number'));
-
-  // Stats
-  const statsRow = document.getElementById('stats-row');
-  statsRow.innerHTML = '';
-  statsRow.appendChild(makeStatCard('Records', data.length, ''));
-  statsRow.appendChild(makeStatCard('Fields', keys.length, ''));
-  numKeys.slice(0,3).forEach(k => {
-    const vals = data.map(r => r[k]).filter(v => typeof v === 'number');
-    const sum = vals.reduce((a,b) => a+b, 0);
-    statsRow.appendChild(makeStatCard('Total ' + k, sum >= 10000 ? (sum/1000).toFixed(1)+'k' : Math.round(sum), ''));
-  });
-
-  // Charts
-  chartInstances.forEach(c => c.destroy());
-  chartInstances.length = 0;
-  const chartsArea = document.getElementById('charts-area');
-  chartsArea.innerHTML = '';
-
-  const CHART_PALETTE = ['#378ADD','#1D9E75','#D85A30','#D4537E','#BA7517','#7F77DD'];
-
-  if (numKeys.length > 0 && strKeys.length > 0) {
-    const labelKey = strKeys[0];
-    const valKey = numKeys[0];
-    const labels = data.map(r => String(r[labelKey]).substring(0,12));
-    const vals = data.map(r => r[valKey]);
-    const card1 = makeChartCard(labelKey + ' by ' + valKey);
-    chartsArea.appendChild(card1);
-    const ctx1 = card1.querySelector('canvas').getContext('2d');
-    chartInstances.push(new Chart(ctx1, {
-      type:'bar',
-      data:{labels,datasets:[{data:vals,backgroundColor:CHART_PALETTE[1]+'bb',borderRadius:4,borderSkipped:false}]},
-      options:{plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'#888'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#888'},grid:{color:'#88888820'}}},responsive:true,maintainAspectRatio:true,aspectRatio:1.8}
-    }));
-  }
-
-  if (numKeys.length > 1 && strKeys.length > 0) {
-    const labelKey = strKeys[0];
-    const valKey = numKeys[1] || numKeys[0];
-    const labels = data.map(r => String(r[labelKey]).substring(0,12));
-    const vals = data.map(r => r[valKey]);
-    const card2 = makeChartCard(labelKey + ' / ' + valKey + ' trend');
-    chartsArea.appendChild(card2);
-    const ctx2 = card2.querySelector('canvas').getContext('2d');
-    chartInstances.push(new Chart(ctx2, {
-      type:'line',
-      data:{labels,datasets:[{data:vals,borderColor:CHART_PALETTE[0],backgroundColor:CHART_PALETTE[0]+'22',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:CHART_PALETTE[0]}]},
-      options:{plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'#888'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#888'},grid:{color:'#88888820'}}},responsive:true,maintainAspectRatio:true,aspectRatio:1.8}
-    }));
-  }
-
-  if (strKeys.length > 1) {
-    const catKey = strKeys.find(k => {
-      const uniq = [...new Set(data.map(r => r[k]))];
-      return uniq.length > 1 && uniq.length <= 8;
-    }) || strKeys[1];
-    if (catKey) {
-      const counts = {};
-      data.forEach(r => { const v = String(r[catKey]); counts[v] = (counts[v]||0)+1; });
-      const labels = Object.keys(counts);
-      const vals = Object.values(counts);
-      const card3 = makeChartCard(catKey + ' breakdown');
-      chartsArea.appendChild(card3);
-      const ctx3 = card3.querySelector('canvas').getContext('2d');
-      chartInstances.push(new Chart(ctx3, {
-        type:'doughnut',
-        data:{labels,datasets:[{data:vals,backgroundColor:CHART_PALETTE.slice(0,labels.length),borderWidth:0}]},
-        options:{plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:10}}},responsive:true,maintainAspectRatio:true,aspectRatio:1.6}
-      }));
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JSONBoard - Paste JSON, Get a Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f7f5f0;
+      --surface: #fffdf8;
+      --surface-2: #efede6;
+      --ink: #171613;
+      --muted: #6d6a61;
+      --border: #d8d3c7;
+      --blue: #378add;
+      --teal: #1d9e75;
+      --coral: #d85a30;
+      --pink: #d4537e;
+      --amber: #ba7517;
+      --purple: #7f77dd;
+      --green: #639922;
+      --red: #e24b4a;
+      --shadow: 0 18px 50px rgba(28, 24, 16, .08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-  }
 
-  if (numKeys.length >= 2) {
-    const card4 = makeChartCard(numKeys[0] + ' vs ' + numKeys[1]);
-    chartsArea.appendChild(card4);
-    const ctx4 = card4.querySelector('canvas').getContext('2d');
-    chartInstances.push(new Chart(ctx4, {
-      type:'scatter',
-      data:{datasets:[{data:data.map(r => ({x:r[numKeys[0]],y:r[numKeys[1]]})),backgroundColor:CHART_PALETTE[3]+'99',pointRadius:5}]},
-      options:{plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:numKeys[0],font:{size:10}},ticks:{font:{size:10},color:'#888'},grid:{color:'#88888820'}},y:{title:{display:true,text:numKeys[1],font:{size:10}},ticks:{font:{size:10},color:'#888'},grid:{color:'#88888820'}}},responsive:true,maintainAspectRatio:true,aspectRatio:1.8}
-    }));
-  }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .app { min-height: 100vh; padding: 28px; }
+    .shell { max-width: 1280px; margin: 0 auto; display: grid; gap: 18px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .logo { width: 38px; height: 38px; border-radius: 8px; background: var(--ink); display: grid; place-items: center; flex: 0 0 auto; }
+    h1 { font-size: clamp(24px, 3vw, 42px); line-height: 1.02; margin: 0; letter-spacing: 0; }
+    .sub { color: var(--muted); margin: 6px 0 0; max-width: 760px; line-height: 1.5; }
+    .trust-pill { border: 1px solid var(--border); border-radius: 999px; padding: 8px 12px; color: var(--muted); background: rgba(255,255,255,.5); white-space: nowrap; font-size: 13px; }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); overflow: hidden; }
+    .input-panel { display: grid; grid-template-columns: minmax(0, 1.2fr) 360px; }
+    .input-main { min-width: 0; }
+    .panel-head { min-height: 54px; padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .btn { border: 1px solid var(--border); background: var(--surface); color: var(--ink); border-radius: 6px; min-height: 34px; padding: 0 12px; font-weight: 650; font-size: 13px; }
+    .btn:hover { background: var(--surface-2); }
+    .btn.primary { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+    .btn.danger { border-color: rgba(226,75,74,.35); color: #a62625; }
+    textarea { width: 100%; min-height: 420px; padding: 18px; border: 0; resize: vertical; outline: 0; background: transparent; color: var(--ink); font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; line-height: 1.55; }
+    .input-footer { border-top: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .error { color: #a62625; font-size: 13px; line-height: 1.4; display: none; }
+    .side { border-left: 1px solid var(--border); background: #f4f1ea; padding: 16px; display: grid; align-content: start; gap: 14px; }
+    .side-card { background: rgba(255,255,255,.55); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+    .side-card h2 { margin: 0 0 8px; font-size: 15px; }
+    .side-card p, .side-card li { color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .side-card ul { margin: 8px 0 0; padding-left: 18px; }
+    .dashboard { display: none; gap: 16px; }
+    .dash-head { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
+    .summary h2 { margin: 0; font-size: 22px; }
+    .summary p { margin: 6px 0 0; color: var(--muted); line-height: 1.45; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; min-width: 0; }
+    .stat .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stat .v { font-size: clamp(22px, 3vw, 32px); margin-top: 7px; font-weight: 760; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .insight-strip { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 12px 14px; background: #eaf3de; color: #315b0e; border: 1px solid rgba(99,153,34,.28); border-radius: 8px; }
+    .insight-strip.warn { background: #faeeda; color: #764507; border-color: rgba(186,117,23,.28); }
+    .insight-strip strong { display: block; font-size: 13px; margin-bottom: 2px; }
+    .insight-strip span { font-size: 13px; line-height: 1.35; }
+    .charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; min-width: 0; }
+    .chart-top { display: flex; justify-content: space-between; align-items: start; gap: 12px; margin-bottom: 10px; }
+    .chart-title { font-weight: 750; font-size: 14px; line-height: 1.25; }
+    .chart-meta { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .score { font-size: 11px; border-radius: 999px; padding: 4px 8px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+    .chart-card canvas { width: 100% !important; max-height: 300px; }
+    .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .table-tools { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+    .table-tools input { width: min(320px, 100%); min-height: 36px; border: 1px solid var(--border); border-radius: 6px; background: #fff; padding: 0 11px; outline: 0; }
+    .table-wrap { overflow: auto; max-height: 560px; }
+    table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 13px; }
+    th, td { border-bottom: 1px solid var(--border); padding: 10px 12px; text-align: left; vertical-align: top; }
+    th { position: sticky; top: 0; z-index: 1; background: var(--surface); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; user-select: none; white-space: nowrap; }
+    th button { border: 0; background: transparent; color: inherit; padding: 0; font-weight: 800; display: inline-flex; align-items: center; gap: 5px; }
+    td { max-width: 280px; overflow-wrap: anywhere; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    tbody tr:hover td { background: #f7f3ea; }
+    .badge { display: inline-flex; min-height: 22px; align-items: center; border-radius: 999px; padding: 2px 8px; font-size: 12px; font-weight: 700; }
+    .b-green { background: #eaf3de; color: #315b0e; }
+    .b-blue { background: #e6f1fb; color: #185fa5; }
+    .b-red { background: #fcebeb; color: #9b2323; }
+    .b-amber { background: #faeeda; color: #764507; }
+    .empty { padding: 28px; text-align: center; color: var(--muted); }
+    .footnote { color: var(--muted); font-size: 12px; padding: 10px 14px; border-top: 1px solid var(--border); background: #f9f7f2; }
+    .hidden { display: none !important; }
 
-  // Table
-  const thead = document.getElementById('table-head');
-  const tbody = document.getElementById('table-body');
-  thead.innerHTML = `<tr>${keys.map(k => `<th onclick="sortBy('${k}')">${k} <i class="ti ti-arrows-sort" style="font-size:10px;opacity:0.4" aria-hidden="true"></i></th>`).join('')}</tr>`;
-  renderRows(data, keys);
+    @media (max-width: 920px) {
+      .app { padding: 16px; }
+      .topbar, .dash-head, .table-tools { flex-direction: column; align-items: stretch; }
+      .trust-pill { white-space: normal; }
+      .input-panel { grid-template-columns: 1fr; }
+      .side { border-left: 0; border-top: 1px solid var(--border); }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .charts { grid-template-columns: 1fr; }
+      textarea { min-height: 300px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">
+            <svg width="21" height="21" viewBox="0 0 21 21" fill="none">
+              <rect x="2" y="11" width="3.5" height="8" rx="1" fill="#1d9e75"/>
+              <rect x="7" y="7" width="3.5" height="12" rx="1" fill="#378add"/>
+              <rect x="12" y="4" width="3.5" height="15" rx="1" fill="#d4537e"/>
+              <rect x="17" y="1.5" width="2.5" height="17.5" rx="1" fill="#d85a30"/>
+            </svg>
+          </div>
+          <div>
+            <h1>Paste JSON. Get a dashboard people can understand.</h1>
+            <p class="sub">Local-first analysis with automatic charts, stat cards, sensitive-field detection, and a table that stays useful when the data gets wide.</p>
+          </div>
+        </div>
+        <div class="trust-pill" id="privacy-state">Local-only until you share</div>
+      </header>
 
-  document.getElementById('input-zone').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'flex';
-}
+      <section class="panel input-panel" id="input-panel">
+        <div class="input-main">
+          <div class="panel-head">
+            <div class="label">JSON or JSONL input</div>
+            <div class="actions">
+              <button class="btn" data-example="sales">Sales</button>
+              <button class="btn" data-example="api">API logs</button>
+              <button class="btn" data-example="users">Users</button>
+              <button class="btn" data-example="benchmarks">Benchmarks</button>
+              <button class="btn" data-example="nested">Nested</button>
+            </div>
+          </div>
+          <textarea id="json-input" spellcheck="false" placeholder='Paste JSON here. Arrays, single objects, and JSONL are supported.'></textarea>
+          <div class="input-footer">
+            <div class="error" id="error-msg"></div>
+            <button class="btn primary" id="generate-btn">Generate dashboard</button>
+          </div>
+        </div>
+        <aside class="side">
+          <div class="side-card">
+            <h2>The 10-second promise</h2>
+            <p>JSONBoard turns API-shaped data into human-shaped understanding. Nothing leaves this page until you explicitly share or save.</p>
+          </div>
+          <div class="side-card">
+            <h2>Quality gates in this prototype</h2>
+            <ul>
+              <li>Flattens nested objects to dot-notation columns.</li>
+              <li>Detects numeric, datetime, boolean, categorical, and ID-like fields.</li>
+              <li>Scores chart candidates instead of blindly picking the first columns.</li>
+              <li>Flags sensitive fields before sharing.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
 
-function makeStatCard(label, val, suffix) {
-  const d = document.createElement('div');
-  d.className = 'stat-card';
-  d.innerHTML = `<div class="stat-label">${label}</div><div class="stat-val">${val}${suffix}</div>`;
-  return d;
-}
+      <section class="dashboard" id="dashboard">
+        <div class="dash-head">
+          <div class="summary">
+            <h2 id="dash-title">Dashboard</h2>
+            <p id="dash-subtitle"></p>
+          </div>
+          <div class="actions">
+            <button class="btn" id="new-btn">New JSON</button>
+            <button class="btn" id="redact-btn">Redact sensitive fields</button>
+            <button class="btn primary" id="share-btn">Prepare share link</button>
+          </div>
+        </div>
 
-function makeChartCard(title) {
-  const d = document.createElement('div');
-  d.className = 'chart-card';
-  d.innerHTML = `<div class="chart-title">${title}</div><canvas></canvas>`;
-  return d;
-}
+        <div id="sensitive-strip" class="insight-strip warn hidden">
+          <div>
+            <strong>Sensitive fields detected before share</strong>
+            <span id="sensitive-copy"></span>
+          </div>
+          <button class="btn danger" id="strip-redact-btn">Redact</button>
+        </div>
 
-const STATUS_COLORS = {active:'badge-green',success:'badge-green',paused:'badge-amber',warning:'badge-amber',trial:'badge-blue',error:'badge-red',churned:'badge-red',500:'badge-red',200:'badge-green',201:'badge-green'};
+        <div class="insight-strip" id="insight-strip">
+          <div>
+            <strong id="insight-title">Dashboard ready</strong>
+            <span id="insight-copy">Your data stayed local. Review the charts and table before sharing.</span>
+          </div>
+          <span class="score" id="render-time"></span>
+        </div>
 
-function renderRows(data, keys) {
-  const tbody = document.getElementById('table-body');
-  tbody.innerHTML = data.map(row => `<tr>${keys.map(k => {
-    let v = row[k] === null || row[k] === undefined ? '—' : row[k];
-    const low = String(v).toLowerCase();
-    const cls = STATUS_COLORS[low] || STATUS_COLORS[v];
-    if (cls) return `<td><span class="badge ${cls}">${v}</span></td>`;
-    if (typeof v === 'number') return `<td style="font-variant-numeric:tabular-nums">${v.toLocaleString()}</td>`;
-    return `<td>${v}</td>`;
-  }).join('')}</tr>`).join('');
-}
+        <div class="stats" id="stats"></div>
+        <div class="charts" id="charts"></div>
 
-function filterTable(q) {
-  const keys = Object.keys(rawData[0]||{});
-  const filtered = rawData.filter(r => keys.some(k => String(r[k]).toLowerCase().includes(q.toLowerCase())));
-  renderRows(filtered, keys);
-}
+        <div class="table-card">
+          <div class="table-tools">
+            <div>
+              <div class="label">Inspectable data table</div>
+              <div class="chart-meta" id="table-meta"></div>
+            </div>
+            <input id="search" placeholder="Search every visible column">
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead id="thead"></thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+          <div class="footnote" id="table-note"></div>
+        </div>
+      </section>
+    </div>
+  </main>
 
-function sortBy(col) {
-  if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = true; }
-  const sorted = [...rawData].sort((a,b) => {
-    const av = a[col], bv = b[col];
-    if (typeof av === 'number' && typeof bv === 'number') return sortAsc ? av-bv : bv-av;
-    return sortAsc ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
-  });
-  renderRows(sorted, Object.keys(rawData[0]||{}));
-}
+  <script>
+    const palette = ['#378ADD','#1D9E75','#D85A30','#D4537E','#BA7517','#7F77DD','#639922','#E24B4A'];
+    const state = {
+      rawRows: [],
+      rows: [],
+      fields: [],
+      charts: [],
+      sortKey: null,
+      sortDir: 1,
+      query: '',
+      sensitiveFields: [],
+      redacted: false,
+      chartInstances: []
+    };
 
-function resetView() {
-  chartInstances.forEach(c => c.destroy());
-  chartInstances.length = 0;
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('input-zone').style.display = 'block';
-  document.getElementById('json-input').value = '';
-  rawData = [];
-}
+    const examples = {
+      sales: [
+        {month:'Jan', region:'North', revenue:12400, orders:89, conversion_rate:'7%', status:'active', owner_email:'alice@example.com'},
+        {month:'Feb', region:'South', revenue:15200, orders:112, conversion_rate:'9%', status:'active', owner_email:'bob@example.com'},
+        {month:'Mar', region:'East', revenue:9800, orders:74, conversion_rate:'5%', status:'paused', owner_email:'carol@example.com'},
+        {month:'Apr', region:'West', revenue:18600, orders:145, conversion_rate:'11%', status:'active', owner_email:'dan@example.com'},
+        {month:'May', region:'North', revenue:22100, orders:178, conversion_rate:'12%', status:'active', owner_email:'eve@example.com'},
+        {month:'Jun', region:'South', revenue:16900, orders:131, conversion_rate:'8%', status:'active', owner_email:'frank@example.com'}
+      ],
+      api: [
+        {timestamp:'2026-05-15T08:00:00Z', endpoint:'/api/users', method:'GET', latency_ms:45, status_code:200, calls:2341, error:false},
+        {timestamp:'2026-05-15T08:05:00Z', endpoint:'/api/orders', method:'POST', latency_ms:120, status_code:201, calls:891, error:false},
+        {timestamp:'2026-05-15T08:10:00Z', endpoint:'/api/products', method:'GET', latency_ms:38, status_code:200, calls:5621, error:false},
+        {timestamp:'2026-05-15T08:15:00Z', endpoint:'/api/auth', method:'POST', latency_ms:89, status_code:200, calls:1234, error:false},
+        {timestamp:'2026-05-15T08:20:00Z', endpoint:'/api/webhooks', method:'POST', latency_ms:203, status_code:500, calls:44, error:true},
+        {timestamp:'2026-05-15T08:25:00Z', endpoint:'/api/reports', method:'GET', latency_ms:672, status_code:200, calls:312, error:false},
+        {timestamp:'2026-05-15T08:30:00Z', endpoint:'/api/search', method:'GET', latency_ms:156, status_code:200, calls:789, error:false}
+      ],
+      users: [
+        {user_id:'usr_1001', name:'Aisha K.', plan:'Pro', mrr:49, country:'India', status:'active', api_key:'sk_live_abc123456789'},
+        {user_id:'usr_1002', name:'Marco B.', plan:'Free', mrr:0, country:'Italy', status:'trial', api_key:'sk_live_def123456789'},
+        {user_id:'usr_1003', name:'Jin P.', plan:'Team', mrr:149, country:'Korea', status:'active', api_key:'sk_live_ghi123456789'},
+        {user_id:'usr_1004', name:'Sara W.', plan:'Pro', mrr:49, country:'USA', status:'active', api_key:'sk_live_jkl123456789'},
+        {user_id:'usr_1005', name:'Leo M.', plan:'Pro', mrr:49, country:'Brazil', status:'churned', api_key:'sk_live_mno123456789'}
+      ],
+      benchmarks: [
+        {commit:'a17c92', branch:'main', runtime_ms:822, memory_mb:192, bundle_kb:214, passed:true, created_at:'2026-05-11'},
+        {commit:'b30af1', branch:'main', runtime_ms:790, memory_mb:188, bundle_kb:211, passed:true, created_at:'2026-05-12'},
+        {commit:'c41b02', branch:'feature-chart', runtime_ms:1040, memory_mb:247, bundle_kb:238, passed:false, created_at:'2026-05-13'},
+        {commit:'d52d44', branch:'feature-chart', runtime_ms:910, memory_mb:225, bundle_kb:231, passed:true, created_at:'2026-05-14'},
+        {commit:'e63e09', branch:'main', runtime_ms:776, memory_mb:184, bundle_kb:209, passed:true, created_at:'2026-05-15'}
+      ],
+      nested: [
+        {id:1, user:{name:'Nora', address:{city:'London', zip:'SW1A'}}, invoice:{amount:1200, currency:'USD'}, tags:['vip','renewal'], token:'tok_test_123456'},
+        {id:2, user:{name:'Ishan', address:{city:'Bengaluru', zip:'560001'}}, invoice:{amount:3400, currency:'USD'}, tags:['new'], token:'tok_test_abcdef'},
+        {id:3, user:{name:'Mei', address:{city:'Singapore', zip:'018956'}}, invoice:{amount:2100, currency:'USD'}, tags:['vip'], token:'tok_test_789xyz'}
+      ]
+    };
 
-loadExample('sales');
-</script>
+    const $ = (id) => document.getElementById(id);
+
+    document.querySelectorAll('[data-example]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        $('json-input').value = JSON.stringify(examples[btn.dataset.example], null, 2);
+        $('error-msg').style.display = 'none';
+      });
+    });
+    $('generate-btn').addEventListener('click', generateDashboard);
+    $('new-btn').addEventListener('click', reset);
+    $('search').addEventListener('input', (event) => { state.query = event.target.value; renderTable(); });
+    $('redact-btn').addEventListener('click', redactSensitiveFields);
+    $('strip-redact-btn').addEventListener('click', redactSensitiveFields);
+    $('share-btn').addEventListener('click', prepareShare);
+
+    function generateDashboard() {
+      const started = performance.now();
+      const parsed = parseInput($('json-input').value);
+      if (!parsed.ok) return showError(parsed.error);
+      hideError();
+
+      state.rawRows = parsed.rows;
+      state.rows = parsed.rows.map((row) => flatten(row));
+      state.fields = inferFields(state.rows);
+      state.sensitiveFields = detectSensitiveFields(state.fields, state.rows);
+      state.redacted = false;
+      state.sortKey = null;
+      state.query = '';
+      $('search').value = '';
+
+      state.charts = recommendCharts(state.rows, state.fields).slice(0, 4);
+      renderDashboard(performance.now() - started);
+    }
+
+    function parseInput(input) {
+      const raw = input.trim();
+      if (!raw) return {ok:false, error:'Paste JSON or JSONL first.'};
+      try {
+        const data = JSON.parse(raw);
+        const rows = Array.isArray(data) ? data : [data];
+        if (rows.length === 0) return {ok:false, error:'The array is empty. Add at least one record.'};
+        if (!rows.every((row) => row && typeof row === 'object' && !Array.isArray(row))) {
+          return {ok:false, error:'Top-level rows must be objects. Arrays of primitives are not dashboard-shaped yet.'};
+        }
+        return {ok:true, rows};
+      } catch (jsonError) {
+        try {
+          const rows = raw.split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+          if (!rows.length) return {ok:false, error:'No JSONL rows found.'};
+          return {ok:true, rows};
+        } catch (jsonlError) {
+          return {ok:false, error:`Invalid JSON near: ${jsonError.message}`};
+        }
+      }
+    }
+
+    function flatten(input, prefix = '', out = {}, depth = 0) {
+      Object.entries(input || {}).forEach(([key, value]) => {
+        const path = prefix ? `${prefix}.${key}` : key;
+        if (value && typeof value === 'object' && !Array.isArray(value) && depth < 3) flatten(value, path, out, depth + 1);
+        else out[path] = Array.isArray(value) ? value.join(', ') : value;
+      });
+      return out;
+    }
+
+    function inferFields(rows) {
+      const keys = [...new Set(rows.flatMap((row) => Object.keys(row)))];
+      return keys.map((key) => {
+        const values = rows.map((row) => row[key]).filter((value) => value !== null && value !== undefined && value !== '');
+        const sampled = values.slice(0, 100);
+        const unique = new Set(sampled.map((value) => String(value))).size;
+        const numericValues = sampled.map(parseNumberish).filter((value) => Number.isFinite(value));
+        const lower = key.toLowerCase();
+        const idLike = /(id|_id|uuid|guid|code|zip|postal|phone|tel|token|key|secret)/i.test(key);
+        const boolLike = sampled.length > 0 && sampled.every((value) => ['true','false','1','0'].includes(String(value).toLowerCase()) || typeof value === 'boolean');
+        const dateLike = sampled.length > 0 && (/(date|time|_at|created|updated|timestamp)/i.test(key) || sampled.every((value) => !Number.isNaN(Date.parse(value))));
+        let type = 'string';
+        if (boolLike) type = 'boolean';
+        else if (!idLike && sampled.length > 0 && numericValues.length === sampled.length) type = 'number';
+        else if (dateLike) type = 'datetime';
+        else if (unique <= 50) type = 'categorical';
+        return {key, type, unique, idLike, values, numericValues, lower};
+      });
+    }
+
+    function parseNumberish(value) {
+      if (typeof value === 'number') return value;
+      if (typeof value !== 'string') return Number.NaN;
+      const clean = value.replace(/[$,%\s,]/g, '');
+      if (!clean || !/^-?\d+(\.\d+)?$/.test(clean)) return Number.NaN;
+      const parsed = Number(clean);
+      return value.trim().endsWith('%') ? parsed / 100 : parsed;
+    }
+
+    function detectSensitiveFields(fields, rows) {
+      const patterns = /(email|e-mail|token|api.?key|secret|password|phone|tel|ssn|auth|bearer|private|credential)/i;
+      return fields.filter((field) => {
+        if (patterns.test(field.key)) return true;
+        return rows.some((row) => {
+          const value = String(row[field.key] ?? '');
+          return /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(value) ||
+            /(sk|pk|tok|key|secret)_(live|test)?_?[a-z0-9]{8,}/i.test(value) ||
+            /bearer\s+[a-z0-9._-]{12,}/i.test(value);
+        });
+      });
+    }
+
+    function recommendCharts(rows, fields) {
+      const numerics = fields.filter((field) => field.type === 'number');
+      const categories = fields.filter((field) => field.type === 'categorical' || field.type === 'string').filter((field) => field.unique > 1 && field.unique <= 50);
+      const datetimes = fields.filter((field) => field.type === 'datetime');
+      const booleans = fields.filter((field) => field.type === 'boolean');
+      const candidates = [];
+
+      datetimes.forEach((dateField) => numerics.forEach((numField) => {
+        candidates.push(makeCandidate('line', [dateField, numField], 86 + nameBonus(numField.key), `${human(numField.key)} over time`, `Time trend by ${human(dateField.key)}`));
+      }));
+
+      categories.forEach((catField) => numerics.forEach((numField) => {
+        const score = 72 + cardinalityBonus(catField.unique) + nameBonus(numField.key);
+        candidates.push(makeCandidate(catField.values.map(String).join('').length / Math.max(catField.values.length, 1) > 12 ? 'horizontalBar' : 'bar', [catField, numField], score, `${human(numField.key)} by ${human(catField.key)}`, `Grouped total across ${catField.unique} values`));
+      }));
+
+      categories.filter((field) => field.unique <= 8).forEach((catField) => {
+        candidates.push(makeCandidate('doughnut', [catField], 62 + cardinalityBonus(catField.unique), `${human(catField.key)} breakdown`, `${catField.unique} categories`));
+      });
+
+      booleans.forEach((boolField) => {
+        candidates.push(makeCandidate('boolean', [boolField], 58, `${human(boolField.key)} true/false`, 'Boolean ratio'));
+      });
+
+      for (let i = 0; i < numerics.length; i++) {
+        for (let j = i + 1; j < numerics.length; j++) {
+          const corr = Math.abs(correlation(rows, numerics[i].key, numerics[j].key));
+          candidates.push(makeCandidate('scatter', [numerics[i], numerics[j]], 54 + Math.round(corr * 24), `${human(numerics[i].key)} vs ${human(numerics[j].key)}`, corr > .5 ? 'Strong relationship signal' : 'Numeric comparison'));
+        }
+      }
+
+      numerics.forEach((numField) => {
+        candidates.push(makeCandidate('histogram', [numField], 44 + nameBonus(numField.key), `${human(numField.key)} distribution`, 'Value spread'));
+      });
+
+      const selected = [];
+      candidates.sort((a, b) => b.score - a.score).forEach((candidate) => {
+        const key = candidate.fields.map((field) => field.key).sort().join('|') + candidate.type;
+        if (selected.some((chart) => chart.key === key)) return;
+        if (selected.some((chart) => chart.fields.map((field) => field.key).join('|') === candidate.fields.map((field) => field.key).join('|'))) return;
+        selected.push({...candidate, key});
+      });
+      return selected.filter((chart) => chart.score >= 42);
+    }
+
+    function makeCandidate(type, fields, score, title, meta) {
+      return {type, fields, score, title, meta};
+    }
+
+    function cardinalityBonus(unique) {
+      if (unique >= 3 && unique <= 12) return 14;
+      if (unique < 3 || unique > 20) return -14;
+      return 0;
+    }
+
+    function nameBonus(key) {
+      return /(revenue|amount|total|count|orders|calls|latency|duration|runtime|memory|mrr|rate|error)/i.test(key) ? 10 : 0;
+    }
+
+    function correlation(rows, xKey, yKey) {
+      const pairs = rows.map((row) => [parseNumberish(row[xKey]), parseNumberish(row[yKey])]).filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y));
+      if (pairs.length < 3) return 0;
+      const xs = pairs.map(([x]) => x);
+      const ys = pairs.map(([, y]) => y);
+      const mx = average(xs);
+      const my = average(ys);
+      const numerator = pairs.reduce((sum, [x, y]) => sum + (x - mx) * (y - my), 0);
+      const denominator = Math.sqrt(xs.reduce((sum, x) => sum + (x - mx) ** 2, 0) * ys.reduce((sum, y) => sum + (y - my) ** 2, 0));
+      return denominator ? numerator / denominator : 0;
+    }
+
+    function renderDashboard(renderMs) {
+      $('input-panel').style.display = 'none';
+      $('dashboard').style.display = 'grid';
+      $('privacy-state').textContent = 'Local dashboard - not uploaded';
+      $('render-time').textContent = `${Math.round(renderMs)}ms`;
+      $('dash-title').textContent = `${state.rows.length.toLocaleString()} records, ${state.fields.length} fields`;
+      $('dash-subtitle').textContent = `${state.charts.length || 'No'} chart recommendations from ${typeSummary()}.`;
+      renderSensitiveStrip();
+      renderStats();
+      renderCharts();
+      renderTable();
+    }
+
+    function renderSensitiveStrip() {
+      if (!state.sensitiveFields.length || state.redacted) {
+        $('sensitive-strip').classList.add('hidden');
+        return;
+      }
+      $('sensitive-strip').classList.remove('hidden');
+      $('sensitive-copy').textContent = `Found ${state.sensitiveFields.map((field) => field.key).join(', ')}. Redact before sharing.`;
+    }
+
+    function renderStats() {
+      const stats = $('stats');
+      const numericFields = state.fields.filter((field) => field.type === 'number');
+      const cards = [
+        ['Records', state.rows.length.toLocaleString()],
+        ['Fields', state.fields.length.toLocaleString()],
+        ['Charts', state.charts.length.toLocaleString()],
+        ['Sensitive fields', state.sensitiveFields.length.toLocaleString()]
+      ];
+      numericFields.slice(0, 4).forEach((field) => {
+        const total = state.rows.reduce((sum, row) => sum + (parseNumberish(row[field.key]) || 0), 0);
+        cards.push([`Total ${human(field.key)}`, formatNumber(total)]);
+      });
+      stats.innerHTML = cards.slice(0, 8).map(([key, value]) => `<div class="stat"><div class="k">${escapeHtml(key)}</div><div class="v">${escapeHtml(value)}</div></div>`).join('');
+    }
+
+    function renderCharts() {
+      state.chartInstances.forEach((chart) => chart.destroy());
+      state.chartInstances = [];
+      const chartsEl = $('charts');
+      if (!state.charts.length) {
+        chartsEl.innerHTML = `<div class="chart-card"><div class="empty">No confident chart found. The table is ready for inspection.</div></div>`;
+        return;
+      }
+      chartsEl.innerHTML = state.charts.map((chart, index) => `
+        <div class="chart-card">
+          <div class="chart-top">
+            <div>
+              <div class="chart-title">${escapeHtml(chart.title)}</div>
+              <div class="chart-meta">${escapeHtml(chart.meta)}</div>
+            </div>
+            <span class="score">${chart.score}</span>
+          </div>
+          <canvas id="chart-${index}"></canvas>
+        </div>
+      `).join('');
+      state.charts.forEach((chart, index) => drawChart(chart, `chart-${index}`));
+    }
+
+    function drawChart(chart, canvasId) {
+      const ctx = $(canvasId).getContext('2d');
+      const config = buildChartConfig(chart);
+      if (!config) return;
+      state.chartInstances.push(new Chart(ctx, config));
+    }
+
+    function buildChartConfig(chart) {
+      if (chart.type === 'bar' || chart.type === 'horizontalBar') {
+        const [cat, num] = chart.fields;
+        const grouped = groupSum(cat.key, num.key);
+        return baseChart(chart.type === 'horizontalBar' ? 'bar' : 'bar', {
+          labels: grouped.labels,
+          datasets: [{data: grouped.values, backgroundColor: palette[1] + 'cc', borderRadius: 5, borderSkipped: false}]
+        }, {indexAxis: chart.type === 'horizontalBar' ? 'y' : 'x'});
+      }
+      if (chart.type === 'line') {
+        const [dateField, num] = chart.fields;
+        const points = state.rows.map((row) => ({x: row[dateField.key], y: parseNumberish(row[num.key])})).filter((point) => Number.isFinite(point.y)).sort((a, b) => Date.parse(a.x) - Date.parse(b.x));
+        const sampled = sample(points, 1000);
+        return baseChart('line', {
+          labels: sampled.map((point) => shortDate(point.x)),
+          datasets: [{data: sampled.map((point) => point.y), borderColor: palette[0], backgroundColor: palette[0] + '22', fill: true, tension: .32, pointRadius: 3}]
+        });
+      }
+      if (chart.type === 'doughnut' || chart.type === 'boolean') {
+        const [field] = chart.fields;
+        const counts = groupCount(field.key);
+        return {
+          type: 'doughnut',
+          data: {labels: counts.labels, datasets: [{data: counts.values, backgroundColor: palette.slice(0, counts.labels.length), borderWidth: 0}]},
+          options: {plugins: {legend: {position: 'right'}}, responsive: true, maintainAspectRatio: true, aspectRatio: 1.75}
+        };
+      }
+      if (chart.type === 'scatter') {
+        const [x, y] = chart.fields;
+        const points = sample(state.rows.map((row) => ({x: parseNumberish(row[x.key]), y: parseNumberish(row[y.key])})).filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y)), 1000);
+        return {
+          type: 'scatter',
+          data: {datasets: [{data: points, backgroundColor: palette[3] + 'aa', pointRadius: 4}]},
+          options: commonOptions({xTitle: human(x.key), yTitle: human(y.key)})
+        };
+      }
+      if (chart.type === 'histogram') {
+        const [field] = chart.fields;
+        const bins = histogram(state.rows.map((row) => parseNumberish(row[field.key])).filter(Number.isFinite));
+        return baseChart('bar', {
+          labels: bins.labels,
+          datasets: [{data: bins.values, backgroundColor: palette[4] + 'cc', borderRadius: 5}]
+        });
+      }
+    }
+
+    function baseChart(type, data, overrides = {}) {
+      return {
+        type,
+        data,
+        options: {...commonOptions(), ...overrides}
+      };
+    }
+
+    function commonOptions(extra = {}) {
+      return {
+        plugins: {legend: {display: false}},
+        scales: {
+          x: {title: extra.xTitle ? {display: true, text: extra.xTitle} : undefined, grid: {display: false}, ticks: {color: '#6d6a61', maxRotation: 35}},
+          y: {title: extra.yTitle ? {display: true, text: extra.yTitle} : undefined, grid: {color: 'rgba(109,106,97,.18)'}, ticks: {color: '#6d6a61'}}
+        },
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 1.85
+      };
+    }
+
+    function renderTable() {
+      const fields = state.fields;
+      const filtered = getFilteredRows();
+      const visible = filtered.slice(0, 500);
+      $('thead').innerHTML = `<tr>${fields.map((field) => `<th><button data-sort="${escapeAttr(field.key)}">${escapeHtml(field.key)} ${state.sortKey === field.key ? (state.sortDir === 1 ? 'up' : 'down') : ''}</button></th>`).join('')}</tr>`;
+      $('tbody').innerHTML = visible.map((row) => `<tr>${fields.map((field) => cell(row[field.key], field)).join('')}</tr>`).join('');
+      document.querySelectorAll('[data-sort]').forEach((button) => button.addEventListener('click', () => sortBy(button.dataset.sort)));
+      $('table-meta').textContent = `${filtered.length.toLocaleString()} matching rows, ${fields.length.toLocaleString()} columns`;
+      $('table-note').textContent = filtered.length > 500 ? `Showing first 500 matching rows for smooth rendering. Search or sort to narrow ${filtered.length.toLocaleString()} rows.` : 'All matching rows are visible.';
+    }
+
+    function cell(value, field) {
+      if (value === null || value === undefined || value === '') return `<td class="${field.type === 'number' ? 'num' : ''}">-</td>`;
+      const low = String(value).toLowerCase();
+      const status = statusClass(low);
+      if (status) return `<td><span class="badge ${status}">${escapeHtml(value)}</span></td>`;
+      if (field.type === 'number') return `<td class="num">${escapeHtml(formatNumber(parseNumberish(value)))}</td>`;
+      return `<td>${escapeHtml(String(value))}</td>`;
+    }
+
+    function statusClass(value) {
+      if (['active','success','ok','true','passed','200','201'].includes(value)) return 'b-green';
+      if (['trial','pending','info'].includes(value)) return 'b-blue';
+      if (['paused','warning','slow'].includes(value)) return 'b-amber';
+      if (['error','failed','false','churned','500','401','403'].includes(value)) return 'b-red';
+      return '';
+    }
+
+    function getFilteredRows() {
+      let rows = state.rows;
+      if (state.query.trim()) {
+        const q = state.query.toLowerCase();
+        rows = rows.filter((row) => state.fields.some((field) => String(row[field.key] ?? '').toLowerCase().includes(q)));
+      }
+      if (state.sortKey) {
+        const field = state.fields.find((item) => item.key === state.sortKey);
+        rows = [...rows].sort((a, b) => {
+          const av = field?.type === 'number' ? parseNumberish(a[state.sortKey]) : String(a[state.sortKey] ?? '');
+          const bv = field?.type === 'number' ? parseNumberish(b[state.sortKey]) : String(b[state.sortKey] ?? '');
+          if (field?.type === 'number') return ((av || 0) - (bv || 0)) * state.sortDir;
+          return String(av).localeCompare(String(bv)) * state.sortDir;
+        });
+      }
+      return rows;
+    }
+
+    function sortBy(key) {
+      if (state.sortKey === key) state.sortDir *= -1;
+      else { state.sortKey = key; state.sortDir = 1; }
+      renderTable();
+    }
+
+    function redactSensitiveFields() {
+      if (!state.sensitiveFields.length) return;
+      const sensitive = new Set(state.sensitiveFields.map((field) => field.key));
+      state.rows = state.rows.map((row) => {
+        const next = {...row};
+        sensitive.forEach((key) => { if (key in next) next[key] = '[redacted]'; });
+        return next;
+      });
+      state.fields = inferFields(state.rows);
+      state.sensitiveFields = [];
+      state.redacted = true;
+      state.charts = recommendCharts(state.rows, state.fields).slice(0, 4);
+      renderDashboard(0);
+      $('insight-title').textContent = 'Sensitive fields redacted';
+      $('insight-copy').textContent = 'The dashboard has been rebuilt without the detected sensitive values.';
+    }
+
+    function prepareShare() {
+      $('privacy-state').textContent = 'Share not uploaded in prototype';
+      $('insight-title').textContent = state.sensitiveFields.length ? 'Redact before sharing' : 'Ready for share flow';
+      $('insight-copy').textContent = state.sensitiveFields.length
+        ? 'This local prototype blocks the share moment until sensitive fields are redacted.'
+        : 'Backend share storage is the next vertical slice. This dashboard is clean enough to enter the share flow.';
+      if (state.sensitiveFields.length) $('sensitive-strip').classList.remove('hidden');
+    }
+
+    function groupSum(catKey, numKey) {
+      const map = new Map();
+      state.rows.forEach((row) => {
+        const label = String(row[catKey] ?? 'Unknown');
+        map.set(label, (map.get(label) || 0) + (parseNumberish(row[numKey]) || 0));
+      });
+      return sortedEntries(map);
+    }
+
+    function groupCount(key) {
+      const map = new Map();
+      state.rows.forEach((row) => {
+        const label = String(row[key] ?? 'Unknown');
+        map.set(label, (map.get(label) || 0) + 1);
+      });
+      return sortedEntries(map);
+    }
+
+    function sortedEntries(map) {
+      const entries = [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20);
+      return {labels: entries.map(([label]) => label), values: entries.map(([, value]) => value)};
+    }
+
+    function histogram(values) {
+      if (!values.length) return {labels: [], values: []};
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const count = 10;
+      const width = (max - min || 1) / count;
+      const bins = Array.from({length: count}, () => 0);
+      values.forEach((value) => { bins[Math.min(count - 1, Math.floor((value - min) / width))]++; });
+      return {
+        labels: bins.map((_, index) => `${formatNumber(min + index * width)}-${formatNumber(min + (index + 1) * width)}`),
+        values: bins
+      };
+    }
+
+    function typeSummary() {
+      const counts = state.fields.reduce((acc, field) => ({...acc, [field.type]: (acc[field.type] || 0) + 1}), {});
+      return Object.entries(counts).map(([type, count]) => `${count} ${type}`).join(', ');
+    }
+
+    function sample(items, limit) {
+      if (items.length <= limit) return items;
+      const step = Math.ceil(items.length / limit);
+      return items.filter((_, index) => index % step === 0).slice(0, limit);
+    }
+
+    function average(values) {
+      return values.reduce((sum, value) => sum + value, 0) / values.length;
+    }
+
+    function human(key) {
+      return key.replace(/\./g, ' ').replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+    }
+
+    function shortDate(value) {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
+    }
+
+    function formatNumber(value) {
+      if (!Number.isFinite(value)) return String(value);
+      if (Math.abs(value) >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+      if (Math.abs(value) >= 10000) return `${(value / 1000).toFixed(1)}k`;
+      return Number.isInteger(value) ? value.toLocaleString() : value.toLocaleString(undefined, {maximumFractionDigits: 2});
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/`/g, '&#96;');
+    }
+
+    function showError(message) {
+      $('error-msg').textContent = message;
+      $('error-msg').style.display = 'block';
+    }
+
+    function hideError() {
+      $('error-msg').style.display = 'none';
+    }
+
+    function reset() {
+      state.chartInstances.forEach((chart) => chart.destroy());
+      state.chartInstances = [];
+      $('dashboard').style.display = 'none';
+      $('input-panel').style.display = 'grid';
+      $('privacy-state').textContent = 'Local-only until you share';
+    }
+
+    $('json-input').value = JSON.stringify(examples.api, null, 2);
+  </script>
+</body>
+</html>
